@@ -1,0 +1,43 @@
+BEGIN:VCALENDAR
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VTIMEZONE
+TZID:Asia/Colombo
+X-LIC-LOCATION:Asia/Colombo
+BEGIN:STANDARD
+TZOFFSETFROM:+0530
+TZOFFSETTO:+0530
+TZNAME:GMT+5:30
+DTSTART:19700101T000000
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+DTSTART;TZID=Asia/Colombo:20260309T223000
+DTEND;TZID=Asia/Colombo:20260309T224500
+DTSTAMP:20260304T050748Z
+ORGANIZER;CN=IAS RUSL:mailto:ieeeiasrusl@gmail.com
+UID:drhj7b55b7b936cvkar88u1obc@google.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE
+ ;CN=umeshmaduwantha284@gmail.com;X-NUM-GUESTS=0:mailto:umeshmaduwantha284@g
+ mail.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE
+ ;CN=IAS RUSL;X-NUM-GUESTS=0:mailto:ieeeiasrusl@gmail.com
+X-GOOGLE-CONFERENCE:https://meet.google.com/sjs-gddf-sqr
+X-MICROSOFT-CDO-OWNERAPPTID:-1667948969
+CREATED:20260304T050743Z
+DESCRIPTION:<b>Booked by</b>\nUmesh Maduwantha\numeshmaduwantha284@gmail.co
+ m\n\n-::~:~::~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:
+ ~:~:~:~:~::~:~::-\nJoin with Google Meet: https://meet.google.com/sjs-gddf-
+ sqr\n\nLearn more about Meet at: https://support.google.com/a/users/answer/
+ 9282720\n\nPlease do not edit this section.\n-::~:~::~:~:~:~:~:~:~:~:~:~:~:
+ ~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~::~:~::-
+LAST-MODIFIED:20260304T050747Z
+LOCATION:https://meet.google.com/sjs-gddf-sqr
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:IAS Member Recruitment (Umesh Maduwantha)
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR
