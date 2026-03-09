@@ -1,6 +1,6 @@
 import "../global.css";
 import React from "react";
-import {Text, View, TextInput, Image, ScrollView}from 'react-native';
+import {Text, View, TextInput, Image, ScrollView, TouchableOpacity }from 'react-native';
 import {SafeAreaProvider,SafeAreaView} from 'react-native-safe-area-context';
 import explore from '../assets/explore.jpg';
 import rec from '../assets/Rec.jpg';
@@ -38,26 +38,79 @@ export default function Explore(){
                 <ScrollView 
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{paddingBottom:120}}>
-                    <View className="px-4 mt-4">
+                    <View className="px-4 mt-4 mb-4">
                         <View className="relative translate-y-2 flex overflow-hidden border border-gray-200 rounded-2xl">
                         <Image source={rec} className="w-full h-60 rounded-2xl"></Image>
-                        <View className="bg-white/85 absolute bottom-0 w-full h-1/3">
+                        <View className="bg-white/85 absolute bottom-0 w-full h-[55%]">
                             <View className="flex-row justify-between pt-3">
                                 <Text className="font-medium text-blacktext-xl pl-6 ">Browns Beach</Text>
                                 <Text className="text-black pr-4">rating</Text>
+                            </View>
+                            <Text className="text-black font-normal pl-6">Beautiful 13th century architecture with stunning stained glass windows</Text>
+                            <View className="flex-row justify-between pt-3">
+                                <Text className="font-medium text-blacktext-xl pl-6 pt-2">0.5 Km</Text>
+                                    <TouchableOpacity
+                                        onPress={() => Alert.alert("Clicked!")}
+                                        className="bg-blue-700 rounded-xl py-3 px-4 mr-4"
+                                    >
+                                        <Text className="text-white text-base font-bold">
+                                        View Details
+                                        </Text>
+                                    </TouchableOpacity>
                             </View>
                         </View>
 
                         </View>
                     </View>
-                </ScrollView>
-                    
+                    <View className="px-4 mt-4">
+                        <View className="relative translate-y-2 flex overflow-hidden border border-gray-200 rounded-2xl">
+                        <Image source={rec} className="w-full h-60 rounded-2xl"></Image>
+                        <View className="bg-white/85 absolute bottom-0 w-full h-[55%]">
+                            <View className="flex-row justify-between pt-3">
+                                <Text className="font-medium text-blacktext-xl pl-6 ">Browns Beach</Text>
+                                <Text className="text-black pr-4">rating</Text>
+                            </View>
+                            <Text className="text-black font-normal pl-6">Beautiful 13th century architecture with stunning stained glass windows</Text>
+                            <View className="flex-row justify-between pt-3">
+                                <Text className="font-medium text-blacktext-xl pl-6 pt-2">0.5 Km</Text>
+                                    <TouchableOpacity
+                                        onPress={() => Alert.alert("Clicked!")}
+                                        className="bg-blue-700 rounded-xl py-3 px-4 mr-4"
+                                    >
+                                        <Text className="text-white text-base font-bold">
+                                        View Details
+                                        </Text>
+                                    </TouchableOpacity>
+                            </View>
+                        </View>
 
-                
+                        </View>
+                    </View>
+                    <View className="px-4 mt-4">
+                        <View className="relative translate-y-2 flex overflow-hidden border border-gray-200 rounded-2xl">
+                        <Image source={rec} className="w-full h-60 rounded-2xl"></Image>
+                        <View className="bg-white/85 absolute bottom-0 w-full h-[55%]">
+                            <View className="flex-row justify-between pt-3">
+                                <Text className="font-medium text-blacktext-xl pl-6 ">Browns Beach</Text>
+                                <Text className="text-black pr-4">rating</Text>
+                            </View>
+                            <Text className="text-black font-normal pl-6">Beautiful 13th century architecture with stunning stained glass windows</Text>
+                            <View className="flex-row justify-between pt-3">
+                                <Text className="font-medium text-blacktext-xl pl-6 pt-2">0.5 Km</Text>
+                                    <TouchableOpacity
+                                        onPress={() => Alert.alert("Clicked!")}
+                                        className="bg-blue-700 rounded-xl py-3 px-4 mr-4"
+                                    >
+                                        <Text className="text-white text-base font-bold">
+                                        View Details
+                                        </Text>
+                                    </TouchableOpacity>
+                            </View>
+                        </View>
 
-                
-                
-                
+                        </View>
+                    </View>
+                </ScrollView>   
             </SafeAreaView>
         </SafeAreaProvider>
     )
