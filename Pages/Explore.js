@@ -4,8 +4,10 @@ import {Text, View, TextInput, Image, ScrollView, TouchableOpacity }from 'react-
 import {SafeAreaProvider,SafeAreaView} from 'react-native-safe-area-context';
 import explore from '../assets/explore.jpg';
 import rec from '../assets/Rec.jpg';
+import { useNavigation } from "@react-navigation/native";
 
 export default function Explore(){
+    const navigation=useNavigation();
     return (
         <SafeAreaProvider>
             <SafeAreaView className="bg-white flex-1 " edges={['top','left','right']}>
@@ -97,20 +99,36 @@ export default function Explore(){
                             <Text className="text-black font-normal pl-6">Beautiful 13th century architecture with stunning stained glass windows</Text>
                             <View className="flex-row justify-between pt-3">
                                 <Text className="font-medium text-blacktext-xl pl-6 pt-2">0.5 Km</Text>
-                                    <TouchableOpacity
-                                        onPress={() => Alert.alert("Clicked!")}
-                                        className="bg-blue-700 rounded-xl py-3 px-4 mr-4"
+                                <TouchableOpacity
+                                    onPress={() => Alert.alert("Clicked!")}
+                                    className="bg-blue-700 rounded-xl py-3 px-4 mr-4"
                                     >
-                                        <Text className="text-white text-base font-bold">
+                                    <Text className="text-white text-base font-bold">
                                         View Details
-                                        </Text>
-                                    </TouchableOpacity>
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
                         </View>
 
                         </View>
                     </View>
-                </ScrollView>   
+                </ScrollView>
+                <View className="absolute bottom-0 h-20 w-full bg-white border-t border-gray-200 flex-row justify-around items-center">
+                    <TouchableOpacity className="items-center" onPress={()=>navigation.navigate("Home")}>
+                        <Text className="text-[16px] font-medium">Home</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                    className="items-center" onPress={()=>navigation.navigate("Explore")}>
+                        <Text className="text-[16px] font-medium">Explore</Text>
+                    </TouchableOpacity>
+
+                    <View className="items-center">
+                        <Text className="text-[16px] font-medium">Profile</Text>
+                    </View>
+
+                </View>
+                   
             </SafeAreaView>
         </SafeAreaProvider>
     )

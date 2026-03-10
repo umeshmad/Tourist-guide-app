@@ -124,9 +124,6 @@ export default function Home() {
           </View>
         </View>
 
-        
-
-        {/* Bottom Navigation */}
         <View className="absolute bottom-0 h-20 w-full bg-white border-t border-gray-200 flex-row justify-around items-center">
           <View className="items-center">
             <Text className="text-[16px] font-medium">Home</Text>
@@ -137,9 +134,9 @@ export default function Home() {
             <Text className="text-[16px] font-medium">Explore</Text>
           </TouchableOpacity>
 
-          <View className="items-center">
+          <TouchableOpacity className="items-center" onPress={()=>navigation.navigate("Tour Planing")}>
             <Text className="text-[16px] font-medium">Profile</Text>
-          </View>
+          </TouchableOpacity>
 
         </View>
 
