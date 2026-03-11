@@ -123,9 +123,13 @@ export default function Explore(){
                         <Text className="text-[16px] font-medium">Explore</Text>
                     </TouchableOpacity>
 
-                    <View className="items-center">
+                    <TouchableOpacity className="items-center" onPress={()=>navigation.navigate("Tour Planing")}>
+                        <Text className="text-[16px] font-medium">Sheduler</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity className="items-center" onPress={()=>navigation.navigate("Profile")}>
                         <Text className="text-[16px] font-medium">Profile</Text>
-                    </View>
+                    </TouchableOpacity>
 
                 </View>
                    

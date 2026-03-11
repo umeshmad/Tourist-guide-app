@@ -5,7 +5,10 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Calander from '../assets/event.png';
 import Plus from '../assets/plus.png';
 import calander2 from '../assets/schedule.png';
+import { useNavigation } from "@react-navigation/native";
+
 export default function TourPlaning(){
+    const navigation = useNavigation();
     return(
         <SafeAreaProvider>
             <SafeAreaView className="bg-white flex-1" edges={['top','right','left']}>
@@ -49,6 +52,25 @@ export default function TourPlaning(){
                             </View>
                         </View>
                     </View>
+                </View>
+                <View className="absolute bottom-0 h-20 w-full bg-white border-t border-gray-200 flex-row justify-around items-center">
+                    <TouchableOpacity className="items-center" onPress={()=>navigation.navigate("Home")}>
+                        <Text className="text-[16px] font-medium">Home</Text>
+                    </TouchableOpacity>
+                
+                    <TouchableOpacity
+                    className="items-center" onPress={()=>navigation.navigate("Explore")}>
+                        <Text className="text-[16px] font-medium">Explore</Text>
+                    </TouchableOpacity>
+                
+                    <TouchableOpacity className="items-center" onPress={()=>navigation.navigate("Tour Planing")}>
+                        <Text className="text-[16px] font-medium">Sheduler</Text>
+                    </TouchableOpacity>
+                
+                    <TouchableOpacity className="items-center" onPress={()=>navigation.navigate("Profile")}>
+                        <Text className="text-[16px] font-medium">Profile</Text>
+                    </TouchableOpacity>
+                
                 </View>
                 
 
