@@ -1,6 +1,6 @@
 import "../global.css";
 import React from "react";
-import {Text, View, TextInput, Image, ScrollView, TouchableOpacity }from 'react-native';
+import {Text, View, Image, ScrollView, TouchableOpacity }from 'react-native';
 import {SafeAreaProvider,SafeAreaView} from 'react-native-safe-area-context';
 import explore from '../assets/explore.jpg';
 import rec from '../assets/Rec.jpg';

@@ -7,6 +7,9 @@ import Home from './Pages/Home';
 import Explore from './Pages/Explore';
 import Sheduler from './Pages/Sheduler';
 import Profile from './Pages/Profile';
+import Search from './Pages/Search';
+import Hotel from './Pages/Hotels';
+import Attraction from './Pages/Attraction';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +21,9 @@ export default function App() {
         <Stack.Screen name="Explore" component={Explore}/>
         <Stack.Screen name="Tour Planing" component={Sheduler}/>
         <Stack.Screen name="Profile" component={Profile}/>
+        <Stack.Screen name="Search" component={Search}/>
+        <Stack.Screen name="Hotels" component={Hotel}/>
+        <Stack.Screen name="Attraction"component={Attraction}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -11,22 +11,24 @@ import logo from '../assets/search.png';
 export default function Home() {
   const navigation = useNavigation();
   return (
+    
     <SafeAreaProvider>
       <SafeAreaView className="flex-1 bg-white" edges={['top', 'left', 'right']}>
 
-        {/* Search Bar */}
+        <TouchableOpacity onPress={()=>navigation.navigate("Search")}>
         <View className="justify-start pt-6 px-4">
           <View className="flex-row items-center border border-gray-300 rounded-3xl py-2 px-2">
             <Image source={logo} className="w-6 h-6 ml-2"/>
             <TextInput 
               placeholder="Search places, activities..." 
               className="pl-3 text-[15px] flex-1"
+              editable={false}
+              pointerEvents="None"
               style={{ letterSpacing: 2 }}
             />
           </View>
         </View>
-
-        {/* Featured Destinations */}
+        </TouchableOpacity>
         <View className="mt-8 px-4">
           <Text className="font-medium text-[22px]" style={{letterSpacing: 2}}>
             Featured Destinations
@@ -47,7 +49,6 @@ export default function Home() {
           </ScrollView>
         </View>
 
-        {/* Explore Categories */}
         <View className="flex-1 mt-8 px-4">
           <Text className="font-medium text-[22px]" style={{letterSpacing: 2}}>
             Explore Categories
@@ -55,7 +56,6 @@ export default function Home() {
 
           <View className="flex-row justify-between mt-6">
 
-            {/* Category Card */}
             <View className="relative rounded-xl bg-white h-36 w-24 justify-center items-center border border-gray-200"
               style={{
                 shadowColor: '#000',
@@ -106,7 +106,6 @@ export default function Home() {
 
           </View>
 
-          {/* Popular Destinations */}
           <Text className="font-medium text-[22px] pt-8 pb-5">
             Popular Destinations
           </Text>
