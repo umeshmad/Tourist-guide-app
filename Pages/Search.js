@@ -42,10 +42,10 @@ export default function Search(){
                     </TouchableOpacity>
 
                     
-                    <View className="bg-green-100 border border-gray-200 flex-1 h-16 mx-1 rounded-xl justify-center items-center flex-row">
+                    <TouchableOpacity className="bg-green-100 border border-gray-200 flex-1 h-16 mx-1 rounded-xl justify-center items-center flex-row" onPress={()=>navigation.navigate("Resturants")}>
                         <Image source={Hiking} className="h-12 w-12"/>
                         <Text className="text-green-600 text-lg font-bold pl-2">Tours</Text>
-                    </View>
+                    </TouchableOpacity>
                     
                     <TouchableOpacity onPress={()=>navigation.navigate("Attraction")}>
                     <View className="bg-red-100 border border-gray-200 flex-1 h-16 ml-2 rounded-xl justify-center items-center flex-row">
