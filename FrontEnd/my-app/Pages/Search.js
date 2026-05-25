@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {View, Image, Text, ScrollView, TextInput, TouchableOpacity, Alert} from 'react-native';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import '../global.css';
 import { useNavigation } from '@react-navigation/native';
-import * as Expolocation from 'expo-location';
-
+import * as Location from 'expo-location';
 import logo from '../assets/search.png';
 import Sleep from '../assets/sleep.png';
 import Hiking from '../assets/hiking.png';
@@ -15,6 +14,8 @@ import Camara from '../assets/wireless.png';
 import Star from '../assets/star.png';
 import Place1 from '../assets/place1.jpg';
 import Place2 from '../assets/place2.jpg';
+import BASE_URL from '../config';
+
 
 export default function Search(){
     const navigation = useNavigation();
@@ -22,6 +23,8 @@ export default function Search(){
     const [searchResults, setSearchResults] = useState([]);
     const [userLocation,setUserLocation]=useState(null);
     const [hotels,setHotels]=useState();
+    const [hotelSearchResult,setHotelSearchResult]=useState(null);
+    const [loading, setLoading] = useState(false);
 
 
     const fetchSearchResults = async (query) => {
@@ -30,7 +33,7 @@ export default function Search(){
                 setSearchResults([]);
                 return;
             }
-            const res = await fetch(`http://10.30.10.119:3000/search?q=${query}`);
+            const res = await fetch(`${BASE_URL}/search?q=${query}`);
             const data = await res.json();
             setSearchResults(data);
             } catch (err) {
@@ -39,27 +42,27 @@ export default function Search(){
          };
     const fetchHotelsNearMe=async()=>{
         try{
-            const{status}=await Expolocation.requestForegroundPermissionsAsyns();
+            const{status}=await Location.requestForegroundPermissionsAsync();
             if(status !== 'granted'){
-                Alert.alert("'Permission Denied', 'Allow location access to find hotels near you.");
+                Alert.alert("Permission Denied", "Allow location access to find hotels near you.");
                 return;
             }
-            setloading(true);
-            const location=await Expolocation.getCurrentPositionAsync({Accuracy:Expolocation.Accuracy.High});
-            const {longitude,latitude}=location.coords;
-            setUserLocation(longitude,latitude);
+            setLoading(true);
+            const locationData=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.High});
+            const {longitude,latitude}=locationData.coords;
+            setUserLocation({longitude,latitude});
 
-            const res=await fetch (`http://10.30.10.119:3000/Hotels/nearby`);
+            const res=await fetch (`${BASE_URL}/Hotels/nearby?longitude=${longitude}&latitude=${latitude}`);
             const data=await res.json();
 
-            setHotels(data);
+            navigation.navigate("Hotels",{hotels:data})
 
 
             
         }catch(err){
             console.error(err);
         }finally{
-            setloading(false);
+            setLoading(false);
         }
     }
     return(
@@ -143,7 +146,9 @@ export default function Search(){
                     <View className="relative bg-blue-200 rounded-xl w-16 h-12 ">
                         <Image source={Sleep} className="h-10 w-10 absolute ml-3"/>
                     </View>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={
+                        fetchHotelsNearMe
+                    }>
                     <Text className="text-black text-lg pl-3 font-medium">Hotels near me</Text>
                     </TouchableOpacity>
                 </View>
