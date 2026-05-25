@@ -125,7 +125,9 @@ app.get("/Hotels/nearby", async (req, res) => {
   }
 });
 
-app.get()
+app.get("/Attraction/Names",async(req,res)=>{
+  
+})
 
 async function createServer() {
   await mongodbconnect();
