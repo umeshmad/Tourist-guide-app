@@ -1,13 +1,42 @@
-import React, { useState } from 'react';
-import {Text, View, TouchableOpacity,Image, ScrollView,TextInput} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {Text, View, TouchableOpacity,Image, ScrollView,TextInput,FlatList} from 'react-native';
 import { SafeAreaView,SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
 import logo from '../assets/search.png';
 import place6 from '../assets/place6.jpg';
 import star from '../assets/star.png';
 import place7 from '../assets/place7.jpg';
+import {useRoute} from '@react-navigation/native';
+import BASE_URL from '../config';
 export default function Attraction(){
     const [selected, setSelected]=useState('All');
+    const [attraction,setAttraction]=useState([]);
+    const [search,setSearch]=useState('');
+    const Route=useRoute();
+
+    useEffect(()=>{
+        fetchAttraction()
+    },[search,selected]);
+
+    const fetchAttraction=async()=>{
+        try{
+            let url=`${BASE_URL}/Attraction`;
+            if (search && selected !== 'All') {
+                url += `?q=${search}&category=${selected}`;
+            } else if (search) {
+                url += `?q=${search}`;
+            } else if (selected !== 'All') {
+                url += `?category=${selected}`;
+            }
+            const res=await fetch(url);
+            const text=await res.text();
+            const data=JSON.parse(text);
+            setAttraction(data);
+        }catch(err){
+            console.error(err);
+        }
+
+    }
     return(
         <SafeAreaProvider>
             <SafeAreaView className="bg-white flex-1" edges={['top','right','left']}>
@@ -18,6 +47,7 @@ export default function Attraction(){
                             placeholder="Search places, activities..." 
                             className="pl-3 text-[15px] flex-1"
                             style={{ letterSpacing: 2 }}
+                            onChangeText={setSearch}
                             />
                     </View>
                 </View>
@@ -77,10 +107,35 @@ export default function Attraction(){
                     </View>
                 </View>
                 
-                    <ScrollView 
+                    <FlatList
+                    data={attraction}
+                    keyExtractor={(item,index)=>index.toString()}
                     showsVerticalScrollIndicator={false}
-                    >
-                    <View className="px-4">
+                    contentContainerStyle={{paddingHorizontal:16, paddingBottom:20}}
+                    renderItem={({item,index})=>(
+                        <View key={index} className="w-full h-32 bg-white rounded-xl border border-gray-200 flex-row mb-3">
+                            <Image source={{uri:item.image_url}} className="rounded-xl h-28 w-28 my-2 mx-3 "></Image>
+                            <View className="pt-3 flex-1 pr-2">
+                                <Text className="text-black text-l font-extrabold">{item.attraction_name}</Text>
+                                <ScrollView showsHorizontalScrollIndicator={false}>
+                                <Text className="text-gray-400 text-sm">{item.description}</Text>
+                                </ScrollView>
+                                <View className="flex-row pt-1">
+                                    <Image source={star} className="h-3 w-3 mt-1"></Image>
+                                    <Text className="text-l font-medium text-black pl-2">{item.rating}</Text>
+                                    <Text className="text-[12px] text-black pl-2 pt-0.5">(1,245)</Text>
+                                </View>
+                            </View>
+                            <View className="right-4 ">
+                                <Text className="text-[12px] text-black pl-2 pt-0.5 mt-2">1.2 km</Text>
+                                <View className="rounded-3xl bg-orange-500 flex justify-center items-center h-8 w-16 mt-14">
+                                <Text className="text-white text-l font-bold">+ Add</Text>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+                    />
+                        {/*
                         <View className="w-full h-32 bg-white rounded-xl border border-gray-200 flex-row mb-3">
                             <Image source={place7} className="rounded-xl h-28 w-28 my-2 mx-3 "></Image>
                             <View className="pt-3 flex-1 pr-2">
@@ -157,28 +212,8 @@ export default function Attraction(){
                             </View>
                             
                         </View>
-                        <View className="w-full h-32 bg-white rounded-xl border border-gray-200 flex-row mb-3">
-                            <Image source={place7} className="rounded-xl h-28 w-28 my-2 mx-3 "></Image>
-                            <View className="pt-3 flex-1 pr-2">
-                                <Text className="text-black text-l font-extrabold">Viharamahadevi Park</Text>
-                                <Text className="text-gray-400 text-sm">Beautiful urban park with playgrounds, walking paths, and peaceful green spaces.</Text>
-                                <View className="flex-row pt-1">
-                                    <Image source={star} className="h-3 w-3 mt-1"></Image>
-                                    <Text className="text-l font-medium text-black pl-2">4.8</Text>
-                                    <Text className="text-[12px] text-black pl-2 pt-0.5">(1,245)</Text>
-                                </View>
-                            </View>
-                            <View className="right-4 ">
-                                <Text className="text-[12px] text-black pl-2 pt-0.5 mt-2">1.2 km</Text>
-                                <View className="rounded-3xl bg-orange-500 flex justify-center items-center h-8 w-16 mt-14">
-                                <Text className="text-white text-l font-bold">+ Add</Text>
-                                </View>
-                            </View>
-                            
-                        </View>
-                    </View>
-                        
-                   </ScrollView> 
+                        */}
+                    
             </SafeAreaView>
         </SafeAreaProvider>
     )

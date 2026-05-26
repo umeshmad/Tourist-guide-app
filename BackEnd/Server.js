@@ -23,6 +23,18 @@ async function mongodbconnect() {
   }
 }
 
+const getdistancekm = (lat1, lng1, lat2, lng2) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLng = (lng2 - lng1) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
 app.get("/search", async (req, res) => {
   try {
     const query = req.query.q;
@@ -44,18 +56,21 @@ app.get("/search", async (req, res) => {
 app.get("/Hotels", async (req, res) => {
   try {
     const query = req.query.q;
-    if (!query) {
-      return res.json([]);
-    }
+
+    const filter = query
+      ? {
+          $or: [
+            { hotel_name: { $regex: query, $options: "i" } },
+            { nearest_cities: { $regex: query, $options: "i" } },
+          ]
+        }
+      : {}; // if no query, return all
+
     const hotels = await db
       .collection("Hotels")
-      .find({
-        $or: [
-          { hotel_name: { $regex: query, $options: "i" } },
-          { nearest_cities: { $regex: query, $options: "i" } },
-        ]
-      })
+      .find(filter)
       .toArray();
+
     res.json(hotels);
   } catch (err) {
     console.error(err);
@@ -97,23 +112,12 @@ app.get("/Hotels/nearby", async (req, res) => {
     const userLon = parseFloat(lon);
     const maxRadius = parseFloat(radius);
 
-    const getdistancekm = (lat1, lng1, lat2, lng2) => {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * (Math.PI / 180);
-      const dLng = (lng2 - lng1) * (Math.PI / 180);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    };
     const allhotels = await db.collection("Hotels").find({}).toArray();
 
     const nearby = allhotels
       .map((hotel) => ({
         ...hotel,
-        distanceKm: getdistancekm(userLat, userLon, hotel.latitude, hotel.longitude)
+        distanceKm: (getdistancekm(userLat, userLon, hotel.latitude, hotel.longitude).toFixed(2))
       }))
       .filter((hotel) => hotel.distanceKm <= maxRadius)
       .sort((a, b) => a.distanceKm - b.distanceKm);
@@ -126,8 +130,54 @@ app.get("/Hotels/nearby", async (req, res) => {
 });
 
 app.get("/Attraction/Names",async(req,res)=>{
-  
-})
+  try{
+    const query=req.query.names;
+    const hotelLat=parseFloat(req.query.hotelLat);
+    const hotelLon=parseFloat(req.query.hotelLon);
+    if(!query) return res.json([]);
+
+    const names=query.split(",").map((n)=>n.trim());
+    const attraction=await db.collection('Attraction_places')
+    .find({attraction_name:{$in:names}})
+    .toArray();
+
+    const result=attraction.map((places)=>({
+      ...places,
+      distanceKm:(hotelLat&&hotelLon&&places.latitude&&places.longitude)
+      ?(getdistancekm(hotelLat, hotelLon, places.latitude, places.longitude).toFixed(2))
+      :null 
+    }));
+    res.json(result)
+  }
+  catch(err){
+    res.status(500).json({error:"Something went wrong"})
+  }
+});
+
+app.get("/Attraction", async (req, res) => {
+  try {
+    const query = req.query.q;
+
+    const filter = query
+      ? {
+          $or: [
+            { attraction_name: { $regex: query, $options: "i" } },
+            { city: { $regex: query, $options: "i" } },
+          ]
+        }
+      : {};
+
+    const attraction = await db
+      .collection("Attraction_places")
+      .find(filter)
+      .toArray();
+
+    res.json(attraction);
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
 
 async function createServer() {
   await mongodbconnect();

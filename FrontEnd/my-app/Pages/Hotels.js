@@ -83,22 +83,27 @@ export default function Hotel(){
         }
     };
 
-    const fetchNearbyAtrractionPlaces=async(hotel,index)=>{
-        if(nearbymap[index]) return;
-        const names=parseAttractionPlaces(hotel.nearby_attractions);
-        if(names.length===0) return;
-        try{
-            setNearbyLoading((prev)=>({...prev,[index]:true}));
-            const query=names.join(",");
-            const res=await fetch(`${BASE_URL}/Attraction/nearby?names=${encodeURIComponent(query)}`);
-            const data=await res.json();
-            setNearByMap((prev)=>({...prev,[index]:data}));
-        } catch (err) {
-            console.error('Failed to fetch nearby attractions:', err);
-        } finally{
-            setNearbyLoading((prev) => ({ ...prev, [index]: false }));
-        }
-    };
+    const fetchNearbyAtrractionPlaces = async (hotel, index) => {
+    if (nearbymap[index]) return;
+    const names = parseAttractionPlaces(hotel.nearby_attractions);
+    if (names.length === 0) return;
+    try {
+        setNearbyLoading((prev) => ({ ...prev, [index]: true }));
+        const query = names.join(",");
+        const res = await fetch(`${BASE_URL}/Attraction/Names?names=${encodeURIComponent(query)}&hotelLat=${hotel.latitude}&hotelLon=${hotel.longitude}`);
+        
+        const text = await res.text();
+        console.log("Server response:", text); // keep for debugging
+        const data = JSON.parse(text);         // ✅ parse the text you already have
+        
+        setNearByMap((prev) => ({ ...prev, [index]: data }));
+    } catch (err) {
+        console.error('Failed to fetch nearby attractions:', err);
+    } finally {
+        setNearbyLoading((prev) => ({ ...prev, [index]: false }));
+    }
+};
+
 
     const handleExpand=(hotel,index)=>{
         const isOpening=expand!==index;
@@ -275,7 +280,7 @@ export default function Hotel(){
                                                             <View className="flex-row py-2">
                                                                 <Image source={star} className="h-4 w-4"/>
                                                                 <Text className="text-sm font-medium text-black pl-2">{attraction.rating}</Text>
-                                                                <Text className="text-sm font-medium text-gray-400 pl-2">• 1.2Km away</Text>
+                                                                <Text className="text-sm font-medium text-gray-400 pl-2">{attraction.distanceKm != null ? `• ${attraction.distanceKm} km away` : ''}</Text>
                                                             </View>
                                                             <ScrollView style={{ maxHeight: 90 }} showsVerticalScrollIndicator={true}>
                                                             <Text className="text-sm font-medium text-gray-400 px-4">{attraction.description}</Text>
