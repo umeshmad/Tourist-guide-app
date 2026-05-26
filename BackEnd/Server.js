@@ -157,6 +157,7 @@ app.get("/Attraction/Names",async(req,res)=>{
 app.get("/Attraction", async (req, res) => {
   try {
     const query = req.query.q;
+    const category=req.query.category;
 
     const filter = query
       ? {
@@ -166,6 +167,9 @@ app.get("/Attraction", async (req, res) => {
           ]
         }
       : {};
+    if(category && category!=="ALL"){
+      filter.category=category;
+    }
 
     const attraction = await db
       .collection("Attraction_places")

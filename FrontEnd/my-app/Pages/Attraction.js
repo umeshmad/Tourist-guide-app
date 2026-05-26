@@ -63,7 +63,7 @@ export default function Attraction(){
                     showsHorizontalScrollIndicator={false}>
                         <View className="bg-white border border-gray-200 flex h-40 w-56 rounded-xl overflow-hidden mr-3">
                             <Image source={place6} className="h-40 w-56 relative"></Image>
-                            <View className="bg-black/40 inset-0 absolute flex items-start pt-24 pl-2">
+                            <View className="bg-black/40 absolute top-0 left-0 right-0 bottom-0 flex items-start pt-24 pl-2">
                                 <Text className="text-white text-xl font-bold">Temple</Text>
                                 <View className="flex-row">
                                 <Image source={star} className="h-3 w-3 mt-1"></Image>
@@ -76,7 +76,7 @@ export default function Attraction(){
                         </View>
                         <View className="bg-white border border-gray-200  flex h-40 w-56 rounded-xl overflow-hidden mr-3">
                             <Image source={place6} className="h-40 w-56 relative"></Image>
-                            <View className="bg-black/40 inset-0 absolute flex items-start pt-24 pl-2">
+                            <View className="bg-black/40 absolute top-0 left-0 right-0 bottom-0 flex items-start pt-24 pl-2">
                                 <Text className="text-white text-xl font-bold">Temple</Text>
                                 <View className="flex-row">
                                     <Image source={star} className="h-3 w-3 mt-1"></Image>
@@ -89,7 +89,7 @@ export default function Attraction(){
                         </View>
                         <View className="bg-white border border-gray-200  flex h-40 w-56 rounded-xl overflow-hidden mr-3">
                             <Image source={place6} className="h-40 w-56 relative"></Image>
-                            <View className="bg-black/40 inset-0 absolute flex items-start pt-24 pl-2">
+                            <View className="bg-black/40 absolute top-0 left-0 right-0 bottom-0 flex items-start pt-24 pl-2">
                                 <Text className="text-white text-xl font-bold">Temple</Text>
                                 <View className="flex-row">
                                     <Image source={star} className="h-3 w-3 mt-1"></Image>
@@ -123,7 +123,6 @@ export default function Attraction(){
                                 <View className="flex-row pt-1">
                                     <Image source={star} className="h-3 w-3 mt-1"></Image>
                                     <Text className="text-l font-medium text-black pl-2">{item.rating}</Text>
-                                    <Text className="text-[12px] text-black pl-2 pt-0.5">(1,245)</Text>
                                 </View>
                             </View>
                             <View className="right-4 ">

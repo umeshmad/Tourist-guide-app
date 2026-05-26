@@ -125,7 +125,7 @@ export default function Search(){
                 <View className="flex-row justify-between pt-3 px-4">
                     <View className="rounded-xl flex-1 overflow-hidden mr-2 relative">
                         <Image source={Eiffel} className="h-32 w-full"/>
-                        <View className="absolute bg-black/50 inset-0 justify-center items-center">
+                        <View className="absolute bg-black/50 top-0 left-0 right-0 bottom-0 justify-center items-center">
                             <Text className="text-lg text-white font-bold">Eiffel Tour</Text>
                             <Text className="text-lg text-white font-bold">Trending</Text>
                         </View>    
@@ -133,7 +133,7 @@ export default function Search(){
 
                     <View className="rounded-xl flex-1 overflow-hidden ml-2 relative">
                         <Image source={Eiffel} className="h-32 w-full"/>
-                        <View className="absolute bg-black/50 inset-0 justify-center items-center">
+                        <View className="absolute bg-black/50 top-0 left-0 right-0 bottom-0 justify-center items-center">
                             <Text className="text-lg text-white font-bold">Eiffel Tour</Text>
                             <Text className="text-lg text-white font-bold">Trending</Text>
                         </View>  
