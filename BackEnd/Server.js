@@ -37,7 +37,7 @@ const getdistancekm = (lat1, lng1, lat2, lng2) => {
 
 app.get("/search", async (req, res) => {
   try {
-    const query = req.query.q;
+    const query = req.query.q?.trim();
     if (!query) return res.json([]);
 
     const places = await db
@@ -55,7 +55,7 @@ app.get("/search", async (req, res) => {
 
 app.get("/Hotels", async (req, res) => {
   try {
-    const query = req.query.q;
+    const query = req.query.q?.trim();
 
     const filter = query
       ? {
@@ -80,7 +80,7 @@ app.get("/Hotels", async (req, res) => {
 
 app.get("/Attraction/nearby", async (req, res) => {
   try {
-    const query = req.query.names;
+    const query = req.query.names?.trim();
     if (!query) {
       return res.json([]);
     }
@@ -131,7 +131,7 @@ app.get("/Hotels/nearby", async (req, res) => {
 
 app.get("/Attraction/Names",async(req,res)=>{
   try{
-    const query=req.query.names;
+    const query=req.query.names?.trim();
     const hotelLat=parseFloat(req.query.hotelLat);
     const hotelLon=parseFloat(req.query.hotelLon);
     if(!query) return res.json([]);
@@ -156,7 +156,7 @@ app.get("/Attraction/Names",async(req,res)=>{
 
 app.get("/Attraction", async (req, res) => {
   try {
-    const query = req.query.q;
+    const query = req.query.q?.trim();
     const category=req.query.category;
 
     const filter = query
@@ -167,7 +167,7 @@ app.get("/Attraction", async (req, res) => {
           ]
         }
       : {};
-    if(category && category!=="ALL"){
+    if(category && category!=="All"){
       filter.category=category;
     }
 
@@ -180,6 +180,29 @@ app.get("/Attraction", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Something went wrong" });
   }
+});
+
+app.get("/Resturants", async(req,res)=>{
+  try{
+    const query=req.query.q?.trim();
+    const filter=query
+    ?{
+      $or : [
+        {restaurant_name:{$regex:query,$options:"i"}},
+        {amenity_type:{$regex:query,$options:"i"}},
+      ]
+    }
+    :{};
+
+    const Restaurants=await db
+    .collection("Resturants")
+    .find(filter)
+    .toArray()
+
+    res.json(Restaurants);
+  }catch(err){
+    res.status(500).json({error:"Something went wrong"})
+  }   
 });
 
 

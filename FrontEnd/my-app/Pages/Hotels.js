@@ -65,6 +65,20 @@ export default function Hotel(){
         if(Route.params?.hotel){
             setHotels(Route.params.hotel);
             setOriginalHotels(Route.params.hotel);
+        }else{
+            const fetchAllHotels=async()=>{
+            try{
+                setLoading(true);
+                const res=await fetch(`${BASE_URL}/Hotels`)
+                const data=await res.json();
+                setHotels(data);
+            }catch(err){
+                console.error(err);
+            }finally{
+                setLoading(false);
+            }
+            };
+            fetchAllHotels();
         }
     },[Route.params]);
 

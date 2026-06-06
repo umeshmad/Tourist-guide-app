@@ -37,6 +37,9 @@ export default function Attraction(){
         }
 
     }
+    const populerDestination=attraction.filter(
+        item=>item.num_reviews>=5000
+    );
     return(
         <SafeAreaProvider>
             <SafeAreaView className="bg-white flex-1" edges={['top','right','left']}>
@@ -61,19 +64,25 @@ export default function Attraction(){
                     <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}>
-                        <View className="bg-white border border-gray-200 flex h-40 w-56 rounded-xl overflow-hidden mr-3">
-                            <Image source={place6} className="h-40 w-56 relative"></Image>
+                        {populerDestination.map((item,index)=>(
+                        <View key={index} className="bg-white border border-gray-200 flex h-40 w-56 rounded-xl overflow-hidden mr-3">
+                            <Image source={{uri:item.image_url}} className="h-40 w-56 relative"></Image>
                             <View className="bg-black/40 absolute top-0 left-0 right-0 bottom-0 flex items-start pt-24 pl-2">
-                                <Text className="text-white text-xl font-bold">Temple</Text>
+                                <Text className="text-white text-xl font-bold" numberOfLines={1}>{item.attraction_name}</Text>
                                 <View className="flex-row">
                                 <Image source={star} className="h-3 w-3 mt-1"></Image>
-                                <Text className="text-l font-medium text-white pl-2">4.8</Text>
-                                <Text className="text-[12px] text-white pl-2">(1,245)</Text>
-                                <Text className="text-[12px] text-white pl-2">• 1.2Km away</Text>
+                                <Text className="text-l font-medium text-white pl-2">{item.rating}</Text>
+                                <Text className="text-[12px] text-white pl-2 pt-0.5">• 1.2Km away</Text>
                                 </View>
                                 
                             </View>
                         </View>
+
+                        ))}
+                        
+                            
+                        
+                        {/*
                         <View className="bg-white border border-gray-200  flex h-40 w-56 rounded-xl overflow-hidden mr-3">
                             <Image source={place6} className="h-40 w-56 relative"></Image>
                             <View className="bg-black/40 absolute top-0 left-0 right-0 bottom-0 flex items-start pt-24 pl-2">
@@ -100,6 +109,7 @@ export default function Attraction(){
                                 
                             </View>
                         </View>  
+                        */}
                     </ScrollView>
                     <View className="py-4">
                         <Text className="text-black font-bold text-xl">All Atrraction</Text>
