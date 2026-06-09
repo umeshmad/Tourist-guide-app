@@ -76,7 +76,6 @@ export default function Attraction(){
                 })
             });
         } catch (err) {
-            // Logged silently
         }
     };
     useEffect(()=>{

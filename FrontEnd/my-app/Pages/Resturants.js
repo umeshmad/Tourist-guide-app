@@ -269,7 +269,7 @@ export default function Resturants(){
 
                                 <View className="h-[1px] bg-gray-200 my-4"/>
 
-                                {/* Info grid */}
+                                {/* Infomation grid */}
                                 <View className="flex-row flex-wrap border-t border-b border-gray-100 py-3">
                                     {resturant.opening_hours ?(
                                     <View className="w-full my-1 flex-row items-center">
