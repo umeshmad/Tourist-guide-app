@@ -56,6 +56,7 @@ export default function Home() {
 
           <View className="flex-row justify-between mt-6">
 
+            <TouchableOpacity onPress={()=>navigation.navigate("Hotels")}>
             <View className="relative rounded-xl bg-white h-36 w-24 justify-center items-center border border-gray-200"
               style={{
                 shadowColor: '#000',
@@ -65,9 +66,11 @@ export default function Home() {
                 elevation: 8
               }}>
               <View className="absolute rounded-2xl bg-black h-24 w-20 mb-5"></View>
-              <Text className="text-[14px] pt-28">Hotels</Text>
+              <Text className="text-[14px] pt-28 font-medium">Hotels</Text>
             </View>
+            </TouchableOpacity>
 
+            <TouchableOpacity onPress={()=>navigation.navigate("Resturants")}>
             <View className="relative rounded-xl bg-white h-36 w-24 border border-gray-200 justify-center items-center"
               style={{
                 shadowColor: '#000',
@@ -77,9 +80,11 @@ export default function Home() {
                 elevation: 8
               }}>
               <View className="absolute bg-black h-24 w-20 mb-5 rounded-2xl"></View>
-              <Text className="text-[14px] pt-28">Restaurants</Text>
+              <Text className="text-[14px] pt-28 font-medium">Restaurants</Text>
             </View>
+            </TouchableOpacity>
 
+            <TouchableOpacity onPress={()=>navigation.navigate("Attraction")}>
             <View className="relative rounded-xl bg-white h-36 w-24 border border-gray-200 justify-center items-center"
               style={{
                 shadowColor: '#000',
@@ -89,9 +94,11 @@ export default function Home() {
                 elevation: 8
               }}>
               <View className="absolute mb-5 h-24 w-20 bg-black rounded-2xl"></View>
-              <Text className="text-[14px] pt-28">Attractions</Text>
+              <Text className="text-[14px] pt-28 font-medium">Attractions</Text>
             </View>
+            </TouchableOpacity>
 
+            <TouchableOpacity onPress={()=>navigation.navigate("PhotoSpots")}>
             <View className="relative rounded-xl bg-white h-36 w-24 border border-gray-200 justify-center items-center"
               style={{
                 shadowColor: '#000',
@@ -101,8 +108,9 @@ export default function Home() {
                 elevation: 8
               }}>
               <View className="absolute mb-5 h-24 w-20 bg-black rounded-2xl"></View>
-              <Text className="text-[14px] pt-28">Tours</Text>
+              <Text className="text-[14px] pt-28 font-medium text-center">Photo Spots</Text>
             </View>
+            </TouchableOpacity>
 
           </View>
 

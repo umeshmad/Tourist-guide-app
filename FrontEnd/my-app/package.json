@@ -9,11 +9,13 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",
     "babel-preset-expo": "~11.0.0",
     "expo": "~51.0.39",
     "expo-location": "~17.0.1",
+    "expo-secure-store": "~13.0.2",
     "expo-status-bar": "~1.12.1",
     "metro": "^0.80.9",
     "metro-config": "^0.80.9",

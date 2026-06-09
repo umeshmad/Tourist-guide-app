@@ -104,12 +104,14 @@ export default function Search(){
                     <Text className="text-black text-lg pl-3 font-medium">French Restaurants</Text>
                 </View>
 
+                <TouchableOpacity onPress={()=>navigation.navigate("PhotoSpots")}>
                 <View className="w-[92%] self-center mt-4 h-16 bg-gray-50 rounded-xl flex-row items-center px-4">
                     <View className="relative bg-purple-100 rounded-xl w-16 h-12 ">
                         <Image source={Camara} className="h-10 w-10 absolute ml-3"/>
                     </View>
                     <Text className="text-black text-lg pl-3 font-medium">Photography spots</Text>
                 </View>
+                </TouchableOpacity>
 
                 <Text className="text-xl font-bold text-black pl-4 pt-4 pb-3">Suggested for you</Text>
                 <View className="mt -3 px-4">

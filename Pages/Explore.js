@@ -20,18 +20,29 @@ export default function Explore(){
                 </View>
                 <Text className="text-black font-bold text-2xl pl-8 pt-4">Categories</Text>
                 <View className="pt-4 px-4 flex-row justify-between">
-                    <View className="flex rounded-2xl translate-y-2 bg-white border border-gray-200 items-center justify-end h-28 w-24">
+                    <TouchableOpacity onPress={()=>navigation.navigate("Hotels")}>
+                    <View className="flex rounded-2xl translate-y-2 bg-white border border-gray-200 items-center justify-end h-28 w-24 pb-2">
                         <Text className="text-black font-medium">Hotels</Text>
                     </View>
-                    <View className="flex rounded-2xl translate-y-2 bg-white border border-gray-200 items-center justify-end h-28 w-24">
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={()=>navigation.navigate("Resturants")}>
+                    <View className="flex rounded-2xl translate-y-2 bg-white border border-gray-200 items-center justify-end h-28 w-24 pb-2">
                         <Text className="text-black font-medium">Restaurants</Text>
                     </View>
-                    <View className="flex rounded-2xl translate-y-2 bg-white border border-gray-200 items-center justify-end h-28 w-24">
-                        <Text className="text-black font-medium">Attractions</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={()=>navigation.navigate("Attraction")}>
+                    <View className="flex rounded-2xl translate-y-2 bg-white border border-gray-200 items-center justify-end h-28 w-24 pb-2">
+                        <Text className="text-black font-medium text-center">Attractions</Text>
                     </View>
-                    <View className="flex rounded-2xl translate-y-2 bg-white border border-gray-200 items-center justify-end h-28 w-24">
-                        <Text className="text-black font-medium">Tours</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={()=>navigation.navigate("PhotoSpots")}>
+                    <View className="flex rounded-2xl translate-y-2 bg-white border border-gray-200 items-center justify-end h-28 w-24 pb-2">
+                        <Text className="text-black font-medium text-center">Photo Spots</Text>
                     </View>
+                    </TouchableOpacity>
                 </View>
                 <View className="flex-row justify-between">
                     <Text className="text-black text-2xl font-bold pl-8 pt-8 flex ">Recommended</Text>

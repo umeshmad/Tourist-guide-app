@@ -185,14 +185,22 @@ app.get("/Attraction", async (req, res) => {
 app.get("/Resturants", async(req,res)=>{
   try{
     const query=req.query.q?.trim();
-    const filter=query
-    ?{
-      $or : [
+    const category=req.query.category;
+    
+    const filter={};
+
+    if(query){
+      filter.$or=[
         {restaurant_name:{$regex:query,$options:"i"}},
         {amenity_type:{$regex:query,$options:"i"}},
-      ]
+        {city:{$regex:query,$options:"i"}},
+        {nearby_attractions:{$regex:query,$options:"i"}},
+      ];
     }
-    :{};
+
+    if(category && category!=="ALL"){
+      filter.cuisine_type={ $regex: `^${category}$`, $options: "i" };
+    }
 
     const Restaurants=await db
     .collection("Resturants")
@@ -204,6 +212,44 @@ app.get("/Resturants", async(req,res)=>{
     res.status(500).json({error:"Something went wrong"})
   }   
 });
+
+app.post("/log/click",async(req,res)=>{
+  try{
+    const {attraction_name, attraction_id}=req.body;
+    await db.collection("search_logs").insertOne({
+      attraction_id: attraction_id,
+      attraction_name,
+      timeStamp: new Date()
+    });
+    res.json({success:true})
+  }catch(err){
+    res.status(500).json({error:"Something went wrong"});
+  }
+});
+
+app.get("/popular",async(req,res)=>{
+  try{
+    const top=await db.collection("search_logs").aggregate([
+      { $match: { attraction_id: { $exists: true, $ne: null, $regex: "^[0-9a-fA-F]{24}$" } } },
+      { $group:{_id:"$attraction_id",attraction_name:{$first:"$attraction_name"},count:{$sum:1}}},
+      { $sort:{count:-1}},
+      { $limit:10},
+      { $addFields: { attraction_obj_id: { $toObjectId: "$_id" } } },
+      { $lookup: {
+        from: "Attraction_places",
+        localField: "attraction_obj_id",
+        foreignField: "_id",
+        as: "details"
+      }},
+      { $unwind: "$details" },
+      { $replaceRoot: { newRoot: { $mergeObjects: ["$details", { count: "$count" }] } } }
+    ]).toArray();
+
+    res.json(top);
+  }catch(err){
+    res.status(500).json({error:"Something went wrong"})
+  }
+})
 
 
 async function createServer() {

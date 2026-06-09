@@ -15,6 +15,8 @@ import Star from '../assets/star.png';
 import Place1 from '../assets/place1.jpg';
 import Place2 from '../assets/place2.jpg';
 import BASE_URL from '../config';
+import rest from '../assets/rest.png';
+import Resturants from './Resturants';
 
 
 export default function Search(){
@@ -25,6 +27,7 @@ export default function Search(){
     const [hotels,setHotels]=useState();
     const [hotelSearchResult,setHotelSearchResult]=useState(null);
     const [loading, setLoading] = useState(false);
+    const [popular,setPopular]=useState([]);
 
 
     const fetchSearchResults = async (query) => {
@@ -55,16 +58,39 @@ export default function Search(){
             const res=await fetch (`${BASE_URL}/Hotels/nearby?longitude=${longitude}&latitude=${latitude}`);
             const data=await res.json();
 
-            navigation.navigate("Hotels",{hotels:data})
-
-
-            
+            navigation.navigate("Hotels",{hotels:data})   
         }catch(err){
             console.error(err);
         }finally{
             setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        fetch(`${BASE_URL}/popular`)
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setPopular(data);
+                } else {
+                    setPopular([]);
+                }
+            })
+            .catch(() => {
+                setPopular([]);
+            });
+    }, []);
+
+    const fetchItalianResturants=async()=>{
+        try{
+            const italian=await fetch(`${BASE_URL}/Resturants?category=Italian`)
+            const data=await italian.json();
+            navigation.navigate("Resturants",{resturant:data, filterLabel:"Italian"})
+        }catch(err){
+            console.error(err);
+        }
     }
+
     return(
         <SafeAreaProvider>
             <SafeAreaView className="bg-white flex-1" edges={['top','left','right']}>
@@ -100,14 +126,14 @@ export default function Search(){
                 <View className="flex-row justify-between pt-6 px-4 pb-4">
                     <TouchableOpacity onPress={() => navigation.navigate("Hotels")}>
                     <View className="bg-blue-100 border border-gray-200 flex-1 h-16 mr-2 rounded-xl justify-center items-center flex-row">
-                        <Image source={Sleep} className="h-12 w-12"/>
+                        <Image source={Sleep} className="h-10 w-10 mb-2"/>
                         <Text className="text-blue-500 text-lg font-bold pl-2">Hotels</Text>
                     </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity className="bg-green-100 border border-gray-200 flex-1 h-16 mx-1 rounded-xl justify-center items-center flex-row" onPress={() => navigation.navigate("Resturants")}>
-                        <Image source={Hiking} className="h-12 w-12"/>
-                        <Text className="text-green-600 text-lg font-bold pl-2">Tours</Text>
+                        <Image source={rest} className="h-10 w-10"/>
+                        <Text className="text-green-600 text-lg font-bold pl-2">Restaurant</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity onPress={() => navigation.navigate("Attraction")}>
@@ -122,23 +148,30 @@ export default function Search(){
 
                 <Text className="text-xl font-bold text-black pl-4 pt-4">Popular Searches</Text>
 
-                <View className="flex-row justify-between pt-3 px-4">
-                    <View className="rounded-xl flex-1 overflow-hidden mr-2 relative">
-                        <Image source={Eiffel} className="h-32 w-full"/>
-                        <View className="absolute bg-black/50 top-0 left-0 right-0 bottom-0 justify-center items-center">
-                            <Text className="text-lg text-white font-bold">Eiffel Tour</Text>
-                            <Text className="text-lg text-white font-bold">Trending</Text>
-                        </View>    
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View className="flex-row pt-3 px-4">
+                        {popular.map((place, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                onPress={() => {
+                                    navigation.navigate("Attraction", { place });
+                                }}
+                                className="rounded-xl overflow-hidden mr-3 relative w-40">
+                                <Image
+                                    source={{ uri: place.image_url }}
+                                    className="h-32 w-40"
+                                    resizeMode="cover"
+                                />
+                                <View className="absolute bg-black/50 top-0 left-0 right-0 bottom-0 justify-end p-2">
+                                    <Text className="text-white font-bold text-sm" numberOfLines={1}>
+                                        {place.attraction_name}
+                                    </Text>
+                                    <Text className="text-white text-xs">{place.city}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-
-                    <View className="rounded-xl flex-1 overflow-hidden ml-2 relative">
-                        <Image source={Eiffel} className="h-32 w-full"/>
-                        <View className="absolute bg-black/50 top-0 left-0 right-0 bottom-0 justify-center items-center">
-                            <Text className="text-lg text-white font-bold">Eiffel Tour</Text>
-                            <Text className="text-lg text-white font-bold">Trending</Text>
-                        </View>  
-                    </View>
-                </View>
+                </ScrollView>
 
                 <Text className="text-xl font-bold text-black pl-4 pt-4">Recent Searches</Text>
 
@@ -159,20 +192,23 @@ export default function Search(){
                     </View>
                     <Text className="text-black text-lg pl-3 font-medium">Tours near me</Text>
                 </View>
-
+                <TouchableOpacity onPress={fetchItalianResturants}>
                 <View className="w-[92%] self-center mt-4 h-16 bg-gray-50 rounded-xl flex-row items-center px-4">
                     <View className="relative bg-red-100 rounded-xl w-16 h-12 ">
                         <Image source={Resturant} className="h-10 w-10 absolute ml-3"/>
                     </View>
-                    <Text className="text-black text-lg pl-3 font-medium">French Restaurants</Text>
+                    <Text className="text-black text-lg pl-3 font-medium">Italian Restaurants</Text>
                 </View>
+                </TouchableOpacity>
 
+                <TouchableOpacity onPress={()=>navigation.navigate("PhotoSpots")}>
                 <View className="w-[92%] self-center mt-4 h-16 bg-gray-50 rounded-xl flex-row items-center px-4">
                     <View className="relative bg-purple-100 rounded-xl w-16 h-12 ">
                         <Image source={Camara} className="h-10 w-10 absolute ml-3"/>
                     </View>
                     <Text className="text-black text-lg pl-3 font-medium">Photography spots</Text>
                 </View>
+                </TouchableOpacity>
 
                 <Text className="text-xl font-bold text-black pl-4 pt-4 pb-3">Suggested for you</Text>
                 <View className="mt-3 px-4">

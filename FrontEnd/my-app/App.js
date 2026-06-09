@@ -11,6 +11,7 @@ import Search from './Pages/Search';
 import Hotel from './Pages/Hotels';
 import Attraction from './Pages/Attraction';
 import Resturants from './Pages/Resturants';
+import PhotoSpots from './Pages/PhotoSpots';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +27,7 @@ export default function App() {
         <Stack.Screen name="Hotels" component={Hotel}/>
         <Stack.Screen name="Attraction"component={Attraction}/>
         <Stack.Screen name="Resturants" component={Resturants}/>
+        <Stack.Screen name="PhotoSpots" component={PhotoSpots}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

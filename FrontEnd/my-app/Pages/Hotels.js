@@ -22,6 +22,9 @@ import family from '../assets/family.png';
 import garden from '../assets/park.png';
 import cultural from '../assets/cultural.png';
 import BASE_URL from '../config';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const proxyImage = (rawUrl) => {
     if (!rawUrl) return null;
@@ -60,11 +63,15 @@ export default function Hotel(){
     const [nearbymap,setNearByMap]=useState({});
     const [nearbyLoading, setNearbyLoading] = useState({});
     const [originalHotels, setOriginalHotels]=useState([]);
+    const navigation=useNavigation();
+    const singleHotel=Route.params?.hotel;
 
     useEffect(()=>{
         if(Route.params?.hotel){
-            setHotels(Route.params.hotel);
-            setOriginalHotels(Route.params.hotel);
+            const hotelParam = Route.params.hotel;
+            const hotelsArray = Array.isArray(hotelParam) ? hotelParam : [hotelParam];
+            setHotels(hotelsArray);
+            setOriginalHotels(hotelsArray);
         }else{
             const fetchAllHotels=async()=>{
             try{
@@ -83,6 +90,7 @@ export default function Hotel(){
     },[Route.params]);
 
     const fetchSearchResults=async (query)=>{
+        if(singleHotel) return; 
         try{
             if(!query){ setHotels([]); return; }
             setLoading(true);
@@ -108,7 +116,7 @@ export default function Hotel(){
         
         const text = await res.text();
         console.log("Server response:", text); // keep for debugging
-        const data = JSON.parse(text);         // ✅ parse the text you already have
+        const data = JSON.parse(text);         
         
         setNearByMap((prev) => ({ ...prev, [index]: data }));
     } catch (err) {
@@ -116,7 +124,7 @@ export default function Hotel(){
     } finally {
         setNearbyLoading((prev) => ({ ...prev, [index]: false }));
     }
-};
+    };
 
 
     const handleExpand=(hotel,index)=>{
@@ -124,6 +132,30 @@ export default function Hotel(){
         setExpand(isOpening ? index:null);
         if (isOpening) fetchNearbyAtrractionPlaces(hotel, index);
     };
+
+
+    const addHotel = async (hotel) => {
+        try {
+            const saved = await AsyncStorage.getItem('tasks');
+            const tasks = saved ? JSON.parse(saved) : [];
+
+            const exists = tasks.some(
+                t => t.hotel_name === hotel.hotel_name
+            );
+
+            if (!exists) {
+                tasks.push(hotel);
+                await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+
+            navigation.replace('Tour Planing');
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+
+    
 
     return(
         <SafeAreaProvider>
@@ -144,8 +176,6 @@ export default function Hotel(){
                 {hotels.length===0 && search.length>0 && !loading &&(
                     <Text className="text-gray-400 px-4 mt-2">No Hotels Found in this area</Text>
                 )}
-
-                {/* ✅ Added: loading indicator while fetching search results */}
                 {loading && (
                     <ActivityIndicator size="large" color="#f87171" className="mt-4"/>
                 )}
@@ -185,24 +215,28 @@ export default function Hotel(){
                     renderItem={({item:hotel,index})=>(
                         <View className="px-4 pb-3">
                             {expand!==index &&(
-                            <View className="bg-white rounded-xl border border-gray-200 w-full h-32 translate-y-2 flex-row relative">
+                        <View className="bg-white rounded-xl border border-gray-200 w-full h-32 translate-y-2 flex-row relative">
+                            <TouchableOpacity onPress={()=>handleExpand(hotel,index)} className="flex-row flex-1">
                                 <Image source={{uri: proxyImage(hotel.image_url)}} className="rounded-xl h-24 w-24 mx-3 my-4"/>
-                                <View className="pt-3 pl-2">
-                                    <Text className="text-black text-l font-medium pb-1">{hotel.hotel_name}</Text>
+                                <View className="pt-3 pl-2 flex-1">
+                                    <Text className="text-black text-l font-medium pb-1" numberOfLines={1}>{hotel.hotel_name}</Text>
                                     <View className="flex-row">
                                         <Image source={star} className="h-4 w-4"/>
                                         <Text className="text-sm font-medium text-black pl-2">{hotel.star_rating}</Text>
                                         <Text className="text-sm font-medium text-gray-400 pl-2">({hotel.review_count})</Text>
                                     </View>
                                     <Text className="font-extrabold text-red-400 text-xl">{hotel.price_per_night_usd}</Text>
-                                    <Text className="text-sm font-medium text-gray-400">Per night</Text> 
+                                    <Text className="text-sm font-medium text-gray-400">Per night</Text>
                                 </View>
-                            </View>
-                            )}
-
-                            <TouchableOpacity onPress={()=>handleExpand(hotel,index)} className="absolute top-[40%] right-6">
-                                <Image source={drop} className="h-6 w-6"/>
                             </TouchableOpacity>
+                            <TouchableOpacity 
+                                onPress={() => addHotel(hotel)}
+                                className="absolute bottom-3 right-2 bg-red-400 rounded-2xl px-3 py-1">
+                                <Text className="text-white text-sm font-bold">+ Add</Text>
+                            </TouchableOpacity>
+                        </View>
+)}
+                            
 
                             {expand===index &&(
                             <View className="bg-white rounded-xl border border-gray-200 translate-y-2 w-full mb-12 overflow-hidden">
@@ -229,7 +263,7 @@ export default function Hotel(){
                                         </View>
                                     </View>
 
-                                    //description
+                                    {/*Description*/}
 
                                     <View className="px-4 pt-3">
                                         <Text className="text-l text-gray-600">{hotel.description}</Text>
@@ -268,7 +302,7 @@ export default function Hotel(){
                                     </View>
 
                                     <View className="flex items-end px-3">
-                                        <TouchableOpacity onPress={()=>Alert.alert("Clicked")} className="bg-red-400 rounded-3xl translate-y-2 border border-gray-100 h-12 w-32 flex justify-center items-center">
+                                        <TouchableOpacity onPress={()=>addHotel(hotel)} className="bg-red-400 rounded-3xl translate-y-2 border border-gray-100 h-12 w-32 flex justify-center items-center">
                                             <Text className="text-xl font-bold text-white">Select</Text>
                                         </TouchableOpacity>
                                     </View>
