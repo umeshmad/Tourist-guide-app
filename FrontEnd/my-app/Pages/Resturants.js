@@ -1,11 +1,9 @@
-import React,{useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import '../global.css';
-import {Image, Text, ScrollView, TextInput, View,TouchableOpacity, FlatList, Linking, Alert} from 'react-native';
+import { Image, Text, ScrollView, TextInput, View, TouchableOpacity, FlatList, Linking, Alert } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import logo from '../assets/search.png';
-import place8 from '../assets/place8.jpg';
 import star from '../assets/star.png';
-import place9 from '../assets/place9.jpg';
 import drop from '../assets/drop.png';
 import dropw from '../assets/drop-w.png';
 import location from '../assets/location-pin.png';
@@ -14,34 +12,35 @@ import BASE_URL from '../config';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function Resturants(){
+export default function Resturants() {
 
-    const[resturant,setResturant]=useState([]);
-    const [selected,setSelected]=useState('ALL');
-    const Route=useRoute();
-    const [loading,setLoading]=useState(false);
-    const [search,setSearch]=useState('');
+    const [resturant, setResturant] = useState([]);
+    const [selected, setSelected] = useState('ALL');
+    const Route = useRoute();
+    const [loading, setLoading] = useState(false);
+    const [search, setSearch] = useState('');
     const [originalResturant, setOriginalResturant] = useState([]);
-    const [expand,setExpand]=useState(null);
-    const navigation=useNavigation();
+    const [expand, setExpand] = useState(null);
+    const navigation = useNavigation();
+    const [nearby, setNearBy] = useState([]);
 
-    const addToTasks=async(resturant)=>{
-        try{
-            const saved=await AsyncStorage.getItem('tasks');
-            const tasks=saved ? JSON.parse(saved):[];
-            const exists=tasks.some(t=>t.restaurant_name===resturant.restaurant_name);
-            if(!exists){
+    const addToTasks = async (resturant) => {
+        try {
+            const saved = await AsyncStorage.getItem('tasks');
+            const tasks = saved ? JSON.parse(saved) : [];
+            const exists = tasks.some(t => t.restaurant_name === resturant.restaurant_name);
+            if (!exists) {
                 tasks.push(resturant);
-                await AsyncStorage.setItem('tasks',JSON.stringify(tasks));
+                await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
             }
             navigation.replace('Tour Planing');
-        }catch(err){
-            console.error('Failed to save resturant task:',err);
+        } catch (err) {
+            console.error('Failed to save resturant task:', err);
         }
     };
 
-    const openMap=(link)=>{
-        if(link) Linking.openURL(link).catch(()=>Alert.alert('Error','Could not open map'));
+    const openMap = (link) => {
+        if (link) Linking.openURL(link).catch(() => Alert.alert('Error', 'Could not open map'));
     };
 
     const proxyImage = (rawUrl) => {
@@ -50,285 +49,287 @@ export default function Resturants(){
         return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=400`;
     };
 
-
-    useEffect(()=>{
-        if(Route.params?.resturant){
+    useEffect(() => {
+        if (Route.params?.resturant) {
             const resturantParam = Route.params.resturant;
             setResturant(Array.isArray(resturantParam) ? resturantParam : [resturantParam]);
-            if(Route.params?.filterLabel){
-            setSelected(Route.params.filterLabel);
-    }
-        }else{
-            const fetchAllResturants=async()=>{
-                try{
+            if (Route.params?.filterLabel) {
+                setSelected(Route.params.filterLabel);
+            }
+        } else {
+            const fetchAllResturants = async () => {
+                try {
                     setLoading(true);
-                    const res=await fetch(`${BASE_URL}/Resturants${selected !== 'ALL' ? `?category=${selected}` : ''}`);                    const data=await res.json();
+                    const res = await fetch(`${BASE_URL}/Resturants${selected !== 'ALL' ? `?category=${selected}` : ''}`);
+                    const data = await res.json();
                     setResturant(data);
                     setOriginalResturant(data);
-                    
-                }catch(err){
+                } catch (err) {
                     console.error(err);
-                }finally{setLoading(false);
-                    
+                } finally {
+                    setLoading(false);
                 }
             };
             fetchAllResturants();
         }
-    },[Route.params,selected]);
+    }, [Route.params, selected]);
 
-    const fetchResturants=async(query,category=selected)=>{
-        try{
-            
-            let url=`${BASE_URL}/Resturants`;
-            if(query && category !== 'ALL'){
-                url+=`?q=${query}&category=${category}`
-            }
-            else if(query){
-                url+=`?q=${query}`
-            }else if(category !== 'ALL'){
-                url+=`?category=${category}`
+    const fetchResturants = async (query, category = selected) => {
+        try {
+            let url = `${BASE_URL}/Resturants`;
+            if (query && category !== 'ALL') {
+                url += `?q=${query}&category=${category}`;
+            } else if (query) {
+                url += `?q=${query}`;
+            } else if (category !== 'ALL') {
+                url += `?category=${category}`;
             }
             setLoading(true);
-            const res=await fetch(url);
+            const res = await fetch(url);
             const text = await res.text();
             const data = JSON.parse(text);
             setResturant(data);
-            
-        }catch(err){
+        } catch (err) {
             console.error(err);
-        }finally{
-            setLoading(false)
+        } finally {
+            setLoading(false);
         }
     };
 
-    const populerResturants=resturant.filter(
-        resturant=>resturant.review_count>=380
-    );
+    const populerResturants = resturant.filter(r => r.review_count >= 380);
 
-   
+    const fetchNearBY = async (nearbyString) => {
+        try {
+            if (!nearbyString) return;
+            const names = nearbyString.split(';').map(t => t.trim()).join(',');
+            const res = await fetch(`${BASE_URL}/Attraction/nearby?names=${encodeURIComponent(names)}`);
+            const data = await res.json();
+            setNearBy(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-    return(
+    return (
         <SafeAreaProvider>
-            <SafeAreaView className="bg-white flex-1" edges={['top','right','left']}>
-                <View className="justify-start pt-6 px-4">
-                    <View className="flex-row items-center border border-gray-300 rounded-3xl py-2 px-2">
-                        <Image source={logo} className="w-6 h-6 ml-2"/>
-                            <TextInput 
-                            placeholder="Search restaurants by name, city, cuisine, or nearby attraction…" 
-                            className="pl-3 text-[12px] flex-1"
-                            style={{ letterSpacing: 1 }}
-                            onChangeText={(text)=>{setSearch(text);fetchResturants(text, selected);}}
-                            />
+            <SafeAreaView className="bg-white flex-1" edges={['top', 'right', 'left']}>
+
+                {/* Search Bar */}
+                <View className="px-4 pt-6 pb-3">
+                    <View className="flex-row items-center bg-gray-100 rounded-2xl py-3 px-4">
+                        <Image source={logo} className="w-5 h-5 opacity-50" />
+                        <TextInput
+                            placeholder="Search restaurants, cuisine, city..."
+                            placeholderTextColor="#9CA3AF"
+                            className="pl-3 text-[14px] flex-1 text-gray-800"
+                            onChangeText={(text) => { setSearch(text); fetchResturants(text, selected); }}
+                        />
                     </View>
                 </View>
-                <View className="flex-row">
-                    {['ALL','Italian','Chinese','Sri Lankan'].map((items)=>(
-                        <TouchableOpacity key={items} className={`rounded-3xl flex-1 h-12 justify-center items-center mr-2 mx-4 my-3 border border-gray-200 ${selected===items ? "bg-orange-500":"bg-white"}`}
-                         onPress={()=>{setSelected(items);fetchResturants(search, items);}}>
-                            <Text className={`text-l font-medium ${selected===items ? "text-white":"text-black"}`}>{items}</Text>
+
+                {/* Category */}
+                <View className="flex-row px-4 pb-3 w-full justify-between">
+                    {['ALL', 'Italian', 'Chinese', 'Sri Lankan'].map((item, index, arr) => (
+                        <TouchableOpacity
+                            key={item}
+                            onPress={() => { setSelected(item); fetchResturants(search, item); }}
+                            className={`flex-1 items-center justify-center rounded-full py-2.5 ${index < arr.length - 1 ? 'mr-2' : ''} border ${selected === item ? 'bg-orange-500 border-orange-500' : 'bg-white border-gray-200'}`}
+                        >
+                            <Text className={`text-xs font-bold ${selected === item ? 'text-white' : 'text-gray-600'}`} numberOfLines={1}>{item}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
-                <View className="px-4 py-3">
-                    <Text className="text-xl text-black font-bold my-3">Popular Restaurants</Text>
-                    <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}>
-                        {populerResturants.map((resturant,index)=>(
-                            <View key={index} className="rounded-xl bg-white border border-gray-200 w-65 overflow-hidden mr-3" >
-                                <Image source={{uri:resturant.image_url_1}} className="h-40 w-60 relative"></Image>
-                                <View className="bg-black/45 absolute right-0 left-0 top-0 bottom-0">
-                                    <View className="px-4">
-                                        <View className="mt-14">
-                                            <Text className="text-white font-bold text-lg mt-5">{resturant.restaurant_name.replace(/ Restaurant$/i, '')}</Text>
-                                            <Text className="text-white text-sm mt-1">{resturant.amenity_type}   • {resturant.dining_type} </Text>
-                                            <View className="flex-row">
-                                                <Image source={star} className="h-3 w-3 mt-1"></Image>
-                                                <Text className="text-l font-medium text-white pl-2">{resturant.rating}</Text>
-                                                <Text className="text-[12px] text-white pl-2 mt-0.5">({resturant.review_count})</Text>
-                                                <Text className="text-[12px] text-white pl-2 mt-0.5">• 1.2Km away</Text>
-                                            </View>
-                                        </View>
-                                    </View>
-                                </View>
-                        </View>
-                        ))}
-                        {/*
-                        <View className="rounded-xl bg-white border border-gray-200 h-60 w-60 overflow-hidden mr-3" >
-                            <Image source={place8} className="h-40 w-60 relative"></Image>
-                            <View className="bg-white inset-0 absolute top-[55%]">
-                                <View className="px-4 py-2">
-                                    <Text className="text-black font-bold text-lg">Gallary cafe</Text>
-                                    <Text className="text-gray-400 text-sm">International   • Fine Dining </Text>
-                                    <View className="flex-row pt-3">
-                                        <Image source={star} className="h-3 w-3 mt-1"></Image>
-                                        <Text className="text-l font-medium text-black pl-2">4.8</Text>
-                                        <Text className="text-[12px] text-gray-400 pl-2">(1,245)</Text>
-                                        <Text className="text-[12px] text-gray-400 pl-2">• 1.2Km away</Text>
-                                    </View>
-                                </View>
-                            </View>
 
-                        </View>
-                        <View className="rounded-xl bg-white border border-gray-200 h-60 w-60 overflow-hidden mr-3" >
-                            <Image source={place8} className="h-40 w-60 relative"></Image>
-                            <View className="bg-white inset-0 absolute top-[55%]">
-                                <View className="px-4 py-2">
-                                    <Text className="text-black font-bold text-lg">Gallary cafe</Text>
-                                    <Text className="text-gray-400 text-sm">International   • Fine Dining </Text>
-                                    <View className="flex-row pt-3">
-                                        <Image source={star} className="h-3 w-3 mt-1"></Image>
-                                        <Text className="text-l font-medium text-black pl-2">4.8</Text>
-                                        <Text className="text-[12px] text-gray-400 pl-2">(1,245)</Text>
-                                        <Text className="text-[12px] text-gray-400 pl-2">• 1.2Km away</Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                        </View>
-
-                        */}
-
-                    </ScrollView> 
-
-                    <View className="py-4 px-4">
-                        <Text className="text-black font-bold text-xl">All Restaurants</Text>
-                    </View>
-                </View>
-                    
-                <FlatList
-                data={resturant}
-                keyExtractor={(item,index)=>index.toString()}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{paddingHorizontal:16, paddingBottom:20}}
-                renderItem={({item:resturant,index})=>(
-                    <View className="mb-3">
-
-                        {/* Collapsed Card */}
-                        {expand!==index &&(
-                        <View className="w-full h-32 bg-white rounded-xl border border-gray-200 flex-row relative">
-                            <TouchableOpacity onPress={()=>setExpand(index)} className="flex-row flex-1">
-                                <Image source={{uri:proxyImage(resturant.image_url_1)}} className="rounded-xl h-28 w-28 my-2 mx-3"></Image>
-                                <View className="pt-4 flex-1 pr-2">
-                                    <Text className="text-black text-l font-extrabold" numberOfLines={1}>{resturant.restaurant_name}</Text>
-                                    <Text className="text-gray-400 text-sm mt-3">{resturant.amenity_type} • {resturant.cuisine_type}</Text>
-                                    <View className="flex-row pt-3">
-                                        <Image source={star} className="h-3 w-3 mt-1"></Image>
-                                        <Text className="text-l font-medium text-black pl-2">{resturant.rating}</Text>
-                                        <Text className="text-[12px] text-gray-400 pl-2 pt-0.5">({resturant.review_count})</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                        )}
-
-                        {/* Expanded Card */}
-                        {expand===index &&(
-                        <View className="bg-white rounded-xl border border-gray-200 w-full mb-2 overflow-hidden">
-
-                            <Image source={{uri:proxyImage(resturant.image_url_1)}} className="w-full h-52" resizeMode="cover" style={{width:'100%',height:208}}/>
-
-                            <TouchableOpacity onPress={()=>setExpand(null)} className="absolute right-4 top-4 bg-black/40 rounded-full p-2">
-                                <Image source={dropw} className="h-5 w-5"/>
-                            </TouchableOpacity>
-
-                            {/* Dining type badge */}
-                            <View className="absolute top-4 left-4 bg-orange-500 rounded-2xl px-3 py-1">
-                                <Text className="text-white text-xs font-bold">{resturant.dining_type}</Text>
-                            </View>
-
-                            <View className="p-4 bg-white">
-
-                                {/* cuisine type */}
-                                <View className="flex-row justify-between items-start">
-                                    <View className="flex-1 pr-2">
-                                        <Text className="text-xl text-black font-bold">{resturant.restaurant_name}</Text>
+                {/* Popular Restaurants */}
+                {populerResturants.length > 0 && (
+                    <View className="px-4 pb-2">
+                        <Text className="text-gray-900 font-extrabold text-xl mb-3">Popular Restaurants</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            {populerResturants.map((r, index) => (
+                                <View key={index} className="rounded-2xl overflow-hidden mr-4 border border-gray-100 w-60 h-44" style={{ elevation: 3 }}>
+                                    <Image source={{ uri: r.image_url_1 }} className="h-full w-full absolute" resizeMode="cover" />
+                                    <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/45 justify-end p-4">
+                                        <Text className="text-white font-bold text-base" numberOfLines={1}>{r.restaurant_name.replace(/ Restaurant$/i, '')}</Text>
+                                        <Text className="text-gray-300 text-xs mt-0.5">{r.amenity_type} • {r.dining_type}</Text>
                                         <View className="flex-row items-center mt-1">
-                                            <Image source={star} className="h-4 w-4"/>
-                                            <Text className="text-l font-medium text-black pl-2">{resturant.rating}</Text>
-                                            <Text className="text-xs text-gray-400 pl-2">({resturant.review_count} reviews)</Text>
+                                            <Image source={star} className="h-3 w-3" />
+                                            <Text className="text-white text-xs font-semibold pl-1">{r.rating}</Text>
+                                            <Text className="text-gray-300 text-xs pl-1.5">({r.review_count})</Text>
                                         </View>
                                     </View>
-                                    <View className="bg-orange-100 rounded-lg px-2 py-1">
-                                        <Text className="text-orange-600 text-xs font-bold">{resturant.cuisine_type}</Text>
-                                    </View>
                                 </View>
-
-                                <View className="flex-row items-center mt-2">
-                                    <Image source={location} className="h-4 w-4"/>
-                                    <Text className="text-sm text-gray-500 pl-2">{resturant.address}, {resturant.city}, {resturant.district}, {resturant.province}</Text>
-                                </View>
-
-                                {resturant.vegetarian_friendly==='Yes' &&(
-                                <View className="flex-row items-center mt-2">
-                                    <View className="bg-green-100 rounded-2xl px-3 py-1">
-                                        <Text className="text-green-600 text-xs font-bold">Vegetarian Friendly</Text>
-                                    </View>
-                                </View>
-                                )}
-
-                                <View className="h-[1px] bg-gray-200 my-4"/>
-
-                                {/* Infomation grid */}
-                                <View className="flex-row flex-wrap border-t border-b border-gray-100 py-3">
-                                    {resturant.opening_hours ?(
-                                    <View className="w-full my-1 flex-row items-center">
-                                        <Text className="text-gray-400 text-xs font-semibold mr-1">Hours:</Text>
-                                        <Text className="text-gray-700 text-xs font-bold flex-1">{resturant.opening_hours}</Text>
-                                    </View>
-                                    ):null}
-                                    {resturant.phone ?(
-                                    <View className="w-full my-1 flex-row items-center">
-                                        <Text className="text-gray-400 text-xs font-semibold mr-1">Phone:</Text>
-                                        <Text className="text-gray-700 text-xs font-bold">{resturant.phone}</Text>
-                                    </View>
-                                    ):null}
-                                    {resturant.website ?(
-                                    <View className="w-full my-1 flex-row items-center">
-                                        <Text className="text-gray-400 text-xs font-semibold mr-1">Website:</Text>
-                                        <TouchableOpacity onPress={()=>Linking.openURL(resturant.website)}>
-                                            <Text className="text-orange-500 text-xs font-bold">{resturant.website}</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    ):null}
-                                </View>
-
-                                {/* Nearby attractions */}
-                                {resturant.nearby_attractions &&(
-                                <View className="mt-4">
-                                    <Text className="text-black font-bold text-l mb-2">Nearby Attractions</Text>
-                                    <View className="flex-row flex-wrap">
-                                        {resturant.nearby_attractions.split(';').map((att,i)=>(
-                                            <View key={i} className="bg-orange-50 border border-orange-200 rounded-2xl px-3 py-1 mr-2 mb-2">
-                                                <Text className="text-orange-600 text-xs font-medium">{att.trim()}</Text>
-                                            </View>
-                                        ))}
-                                    </View>
-                                </View>
-                                )}
-
-                                <View className="h-[1px] bg-gray-200 my-4"/>
-
-                                <View className="flex-row justify-between items-center">
-                                    <TouchableOpacity onPress={()=>openMap(resturant.google_maps_link)} className="flex-1 border border-orange-500 rounded-3xl py-3 mr-2 justify-center items-center">
-                                        <Text className="text-orange-500 text-l font-bold">Map</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={()=>addToTasks(resturant)} className="flex-1 bg-orange-500 rounded-3xl py-3 ml-2 justify-center items-center">
-                                        <Text className="text-white text-l font-bold">+ Add to Plan</Text>
-                                    </TouchableOpacity>
-                                </View>
-
-                            </View>
-                        </View>
-                        )}
-
+                            ))}
+                        </ScrollView>
                     </View>
                 )}
-                />
 
-                
+                {/* All Restaurants */}
+                <View className="px-4 pt-3 pb-2">
+                    <Text className="text-gray-900 font-extrabold text-xl">All Restaurants</Text>
+                    <Text className="text-gray-400 text-sm">{resturant.length} restaurants found</Text>
+                </View>
+
+                <FlatList
+                    data={resturant}
+                    keyExtractor={(item, index) => index.toString()}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
+                    renderItem={({ item: resturant, index }) => (
+                        <View className="mb-3">
+
+                            {/* Collapsed Card */}
+                            {expand !== index && (
+                                <TouchableOpacity
+                                    onPress={() => { setExpand(index); fetchNearBY(resturant.nearby_attractions); }}
+                                    className="bg-white rounded-2xl border border-gray-100 w-full overflow-hidden"
+                                    style={{ elevation: 3 }}
+                                    activeOpacity={0.92}
+                                >
+                                    {/* Image */}
+                                    <View className="relative h-36 w-full">
+                                        <Image
+                                            source={{ uri: proxyImage(resturant.image_url_1) }}
+                                            className="w-full h-full"
+                                            resizeMode="cover"
+                                        />
+                                        {/* Dining type */}
+                                        <View className="absolute top-3 left-3 bg-orange-500 rounded-xl px-2.5 py-1">
+                                            <Text className="text-white text-xs font-bold">{resturant.dining_type || resturant.amenity_type}</Text>
+                                        </View>
+                                        {/* Rating */}
+                                        <View className="absolute top-3 right-3 bg-white rounded-xl px-2.5 py-1.5" style={{ elevation: 4 }}>
+                                            <Text className="text-amber-500 font-extrabold text-sm">★ {resturant.rating}</Text>
+                                        </View>
+                                    </View>
+
+                                    {/* Info Row */}
+                                    <View className="px-4 py-3 flex-row items-center justify-between">
+                                        <View className="flex-1 pr-3">
+                                            <Text className="text-gray-900 text-base font-bold" numberOfLines={1}>{resturant.restaurant_name}</Text>
+                                            <Text className="text-gray-400 text-xs mt-0.5">{resturant.amenity_type} • {resturant.cuisine_type}</Text>
+                                            <Text className="text-gray-300 text-xs mt-0.5">({resturant.review_count} reviews)</Text>
+                                        </View>
+                                        <View className="bg-orange-50 border border-orange-200 rounded-xl px-3 py-1.5">
+                                            <Text className="text-orange-500 text-xs font-bold">View</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+
+                            {/* Expanded Card */}
+                            {expand === index && (
+                                <View className="bg-white rounded-xl border border-gray-200 w-full mb-2 overflow-hidden">
+
+                                    <Image source={{ uri: proxyImage(resturant.image_url_1) }} className="w-full h-52" resizeMode="cover" style={{ width: '100%', height: 208 }} />
+
+                                    <TouchableOpacity onPress={() => { setExpand(null); setNearBy([]); }} className="absolute right-4 top-4 bg-black/40 rounded-full p-2">
+                                        <Image source={dropw} className="h-5 w-5" />
+                                    </TouchableOpacity>
+
+                                    <View className="absolute top-4 left-4 bg-orange-500 rounded-2xl px-3 py-1">
+                                        <Text className="text-white text-xs font-bold">{resturant.dining_type}</Text>
+                                    </View>
+
+                                    <View className="p-4 bg-white">
+
+                                        <View className="flex-row justify-between items-start">
+                                            <View className="flex-1 pr-2">
+                                                <Text className="text-xl text-black font-bold">{resturant.restaurant_name}</Text>
+                                                <View className="flex-row items-center mt-1">
+                                                    <Image source={star} className="h-4 w-4" />
+                                                    <Text className="text-l font-medium text-black pl-2">{resturant.rating}</Text>
+                                                    <Text className="text-xs text-gray-400 pl-2">({resturant.review_count} reviews)</Text>
+                                                </View>
+                                            </View>
+                                            <View className="bg-orange-100 rounded-lg px-2 py-1">
+                                                <Text className="text-orange-600 text-xs font-bold">{resturant.cuisine_type}</Text>
+                                            </View>
+                                        </View>
+
+                                        <View className="flex-row items-center mt-2">
+                                            <Image source={location} className="h-4 w-4" />
+                                            <Text className="text-sm text-gray-500 pl-2">{resturant.address}, {resturant.city}, {resturant.district}, {resturant.province}</Text>
+                                        </View>
+
+                                        {resturant.vegetarian_friendly === 'Yes' && (
+                                            <View className="flex-row items-center mt-2">
+                                                <View className="bg-green-100 rounded-2xl px-3 py-1">
+                                                    <Text className="text-green-600 text-xs font-bold">Vegetarian Friendly</Text>
+                                                </View>
+                                            </View>
+                                        )}
+
+                                        <View className="h-[1px] bg-gray-200 my-4" />
+
+                                        <View className="flex-row flex-wrap border-t border-b border-gray-100 py-3">
+                                            {resturant.opening_hours ? (
+                                                <View className="w-full my-1 flex-row items-center">
+                                                    <Text className="text-gray-400 text-xs font-semibold mr-1">Hours:</Text>
+                                                    <Text className="text-gray-700 text-xs font-bold flex-1">{resturant.opening_hours}</Text>
+                                                </View>
+                                            ) : null}
+                                            {resturant.phone ? (
+                                                <View className="w-full my-1 flex-row items-center">
+                                                    <Text className="text-gray-400 text-xs font-semibold mr-1">Phone:</Text>
+                                                    <Text className="text-gray-700 text-xs font-bold">{resturant.phone}</Text>
+                                                </View>
+                                            ) : null}
+                                            {resturant.website ? (
+                                                <View className="w-full my-1 flex-row items-center">
+                                                    <Text className="text-gray-400 text-xs font-semibold mr-1">Website:</Text>
+                                                    <TouchableOpacity onPress={() => Linking.openURL(resturant.website)}>
+                                                        <Text className="text-orange-500 text-xs font-bold">{resturant.website}</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ) : null}
+                                        </View>
+
+                                        {nearby.length > 0 && (
+                                            <View className="mt-4">
+                                                <Text className="text-black font-bold text-l mb-2">Nearby Attractions</Text>
+                                                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                    {nearby.map((place, index) => (
+                                                        <TouchableOpacity onPress={() => navigation.navigate("Attraction"), {
+                                                            selectAttraction: place,
+                                                            expand: true
+                                                        }}>
+                                                            <View key={index} className="mr-3 w-44 rounded-xl overflow-hidden border border-gray-200">
+                                                                <Image source={{ uri: proxyImage(place.image_url) }} style={{ width: 176, height: 110 }} resizeMode="cover" />
+                                                                <View className="p-2">
+                                                                    <Text className="text-black font-bold text-xs" numberOfLines={1}>{place.attraction_name}</Text>
+                                                                    <View className="flex-row items-center mt-1">
+                                                                        <Image source={star} className="h-3 w-3" />
+                                                                        <Text className="text-xs text-black pl-1">{place.rating}</Text>
+                                                                    </View>
+                                                                    <Text className="text-gray-400 text-xs mt-1" numberOfLines={2}>{place.description}</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                    ))}
+                                                </ScrollView>
+                                            </View>
+                                        )}
+
+                                        <View className="h-[1px] bg-gray-200 my-4" />
+
+                                        <View className="flex-row justify-between items-center">
+                                            <TouchableOpacity onPress={() => openMap(resturant.google_maps_link)} className="flex-1 border border-orange-500 rounded-3xl py-3 mr-2 justify-center items-center">
+                                                <Text className="text-orange-500 text-l font-bold">Map</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity onPress={() => addToTasks(resturant)} className="flex-1 bg-orange-500 rounded-3xl py-3 ml-2 justify-center items-center">
+                                                <Text className="text-white text-l font-bold">+ Add to Plan</Text>
+                                            </TouchableOpacity>
+                                        </View>
+
+                                    </View>
+                                </View>
+                            )}
+
+                        </View>
+                    )}
+                />
 
             </SafeAreaView>
         </SafeAreaProvider>
-    )
+    );
 }

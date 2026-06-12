@@ -156,69 +156,56 @@ export default function PhotoSpots() {
   return (
     <SafeAreaProvider>
       <SafeAreaView className="bg-white flex-1" edges={['top', 'right', 'left']}>
-        
-        <View className="justify-start pt-6 px-4">
-          <View className="flex-row items-center border border-gray-300 rounded-3xl py-2 px-2">
-            <Image source={logo} className="w-6 h-6 ml-2" />
+
+        {/* Search Bar */}
+        <View className="px-4 pt-6 pb-3">
+          <View className="flex-row items-center bg-gray-100 rounded-2xl py-3 px-4">
+            <Image source={logo} className="w-5 h-5 opacity-50" />
             <TextInput
               placeholder="Search photo spots, districts..."
-              className="pl-3 text-[15px] flex-1 text-black"
-              style={{ letterSpacing: 2 }}
+              placeholderTextColor="#9CA3AF"
+              className="pl-3 text-[15px] flex-1 text-gray-800"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
         </View>
 
-        <View className="py-4 px-4">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 16 }}
-          >
+        {/* Category Pills */}
+        <View className="px-4 pb-3">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {categories.map((category) => (
               <TouchableOpacity
                 key={category}
-                className={`rounded-3xl h-11 px-6 justify-center items-center mr-2 border border-gray-200 ${
-                  selectedCategory === category ? "bg-purple-600 border-purple-600" : "bg-white"
-                }`}
                 onPress={() => setSelectedCategory(category)}
+                className={`rounded-full px-4 py-2 mr-2 border ${selectedCategory === category ? 'bg-purple-600 border-purple-600' : 'bg-white border-gray-200'}`}
               >
-                <Text
-                  className={`text-sm font-bold ${
-                    selectedCategory === category ? "text-white" : "text-gray-700"
-                  }`}
-                >
-                  {category}
-                </Text>
+                <Text className={`text-sm font-bold ${selectedCategory === category ? 'text-white' : 'text-gray-600'}`}>{category}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
-          
-          {/* Featured/Popular Section */}
-          <Text className="text-black font-extrabold text-xl px-4 pb-3">Trending Photo Spots</Text>
-          <View className="px-4 pb-4">
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingRight: 16 }}
-            >
+
+          {/* Trending Section */}
+          <View className="px-4 pb-3">
+            <Text className="text-gray-900 font-extrabold text-xl mb-3">Trending Photo Spots</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {PHOTO_SPOTS_DATA.slice(0, 3).map((spot) => (
                 <TouchableOpacity
                   key={`featured-${spot.id}`}
                   onPress={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
-                  className="bg-white border border-gray-200 flex h-44 w-60 rounded-2xl overflow-hidden mr-4 shadow-sm"
+                  className="h-44 w-60 rounded-2xl overflow-hidden mr-4 border border-gray-100"
+                  style={{ elevation: 3 }}
                 >
-                  <Image source={{ uri: spot.image_url }} className="h-full w-full absolute" />
-                  <View className="bg-black/45 absolute top-0 left-0 right-0 bottom-0 justify-end p-3">
+                  <Image source={{ uri: spot.image_url }} className="h-full w-full absolute" resizeMode="cover" />
+                  <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/45 justify-end p-4">
                     <Text className="text-white text-lg font-bold leading-5">{spot.name}</Text>
                     <View className="flex-row items-center mt-1">
                       <Image source={star} className="h-3.5 w-3.5" />
-                      <Text className="text-sm font-semibold text-white pl-1">{spot.rating}</Text>
-                      <Text className="text-xs text-gray-200 pl-2">• {spot.district}</Text>
+                      <Text className="text-white text-sm font-semibold pl-1">{spot.rating}</Text>
+                      <Text className="text-gray-300 text-xs pl-2">• {spot.district}</Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -226,10 +213,10 @@ export default function PhotoSpots() {
             </ScrollView>
           </View>
 
-          {/* List Section */}
-          <View className="px-4 pt-2">
-            <Text className="text-black font-extrabold text-xl">Explore All Photo Spots</Text>
-            <Text className="text-gray-400 text-sm pb-4">{filteredSpots.length} spots match your criteria</Text>
+          {/* All Spots Label */}
+          <View className="px-4 pt-2 pb-3">
+            <Text className="text-gray-900 font-extrabold text-xl">Explore All Photo Spots</Text>
+            <Text className="text-gray-400 text-sm">{filteredSpots.length} spots match your criteria</Text>
           </View>
 
           {/* Photo Spots List */}
@@ -239,37 +226,47 @@ export default function PhotoSpots() {
 
               return (
                 <View key={spot.id} className="mb-4">
+
+                  {/* Collapsed Card */}
                   {!isExpanded && (
-                    <View className="bg-white rounded-xl border border-gray-200 w-full h-32 flex-row relative shadow-xs">
-                      <Image source={{ uri: spot.image_url }} className="rounded-xl h-24 w-24 mx-3 my-4" />
-                      <View className="pt-4 pl-1 flex-1 pr-12">
-                        <Text className="text-black text-[15px] font-bold" numberOfLines={1}>
-                          {spot.name}
-                        </Text>
-                        <Text className="text-xs text-purple-600 font-semibold mt-0.5">{spot.category}</Text>
-                        <View className="flex-row items-center mt-1">
-                          <Image source={star} className="h-3.5 w-3.5" />
-                          <Text className="text-xs font-semibold text-black pl-1">{spot.rating}</Text>
-                          <Text className="text-xs text-gray-400 pl-2">• {spot.district}</Text>
+                    <TouchableOpacity
+                      onPress={() => setExpandedSpotId(spot.id)}
+                      className="bg-white rounded-2xl border border-gray-100 w-full overflow-hidden"
+                      style={{ elevation: 3 }}
+                      activeOpacity={0.92}
+                    >
+                      {/* Image Banner */}
+                      <View className="relative h-36 w-full">
+                        <Image source={{ uri: spot.image_url }} className="w-full h-full" resizeMode="cover" />
+                        {/* Category badge */}
+                        <View className="absolute top-3 left-3 bg-purple-600 rounded-xl px-2.5 py-1">
+                          <Text className="text-white text-xs font-bold">{spot.category}</Text>
                         </View>
-                        <Text className="text-xs text-gray-400 font-medium mt-1">
-                          {spot.nearest_city} ({spot.nearest_city_distance_km} km)
-                        </Text>
+                        {/* Rating badge */}
+                        <View className="absolute top-3 right-3 bg-white rounded-xl px-2.5 py-1.5" style={{ elevation: 4 }}>
+                          <Text className="text-amber-500 font-extrabold text-sm">★ {spot.rating}</Text>
+                        </View>
                       </View>
-                      <TouchableOpacity
-                        onPress={() => setExpandedSpotId(spot.id)}
-                        className="absolute top-[40%] right-4 p-1"
-                      >
-                        <Image source={drop} className="h-6 w-6" />
-                      </TouchableOpacity>
-                    </View>
+
+                      {/* Info Row */}
+                      <View className="px-4 py-3 flex-row items-center justify-between">
+                        <View className="flex-1 pr-3">
+                          <Text className="text-gray-900 text-base font-bold" numberOfLines={1}>{spot.name}</Text>
+                          <Text className="text-gray-400 text-xs mt-0.5">{spot.district} District • {spot.nearest_city}</Text>
+                          <Text className="text-gray-300 text-xs mt-0.5">{spot.nearest_city_distance_km} km away</Text>
+                        </View>
+                        <View className="bg-purple-50 border border-purple-200 rounded-xl px-3 py-1.5">
+                          <Text className="text-purple-600 text-xs font-bold">View</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
                   )}
 
-                  {/* Expanded */}
+                  {/* Expanded Card */}
                   {isExpanded && (
                     <View className="bg-white rounded-xl border border-gray-200 w-full mb-2 overflow-hidden shadow-md">
                       <Image source={{ uri: spot.image_url }} className="w-full h-52" />
-                      
+
                       <TouchableOpacity
                         onPress={() => setExpandedSpotId(null)}
                         className="absolute right-4 top-4 bg-black/40 rounded-full p-2"
@@ -292,10 +289,8 @@ export default function PhotoSpots() {
                           </View>
                         </View>
 
-                        {/* Description */}
                         <Text className="text-sm text-gray-600 mt-3 leading-5">{spot.description}</Text>
 
-                        {/* Feature grid */}
                         <View className="flex-row flex-wrap mt-4 border-t border-b border-gray-100 py-3">
                           <View className="w-1/2 my-1.5 flex-row items-center">
                             <Text className="text-gray-400 text-xs font-semibold mr-1">Best Time:</Text>
@@ -323,13 +318,12 @@ export default function PhotoSpots() {
                           </View>
                         </View>
 
-                        {/* Action Buttons */}
                         <View className="flex-row justify-between items-center mt-4">
                           <TouchableOpacity
                             onPress={() => handleOpenMap(spot.google_map_link)}
                             className="flex-row items-center border border-purple-600 rounded-3xl py-2.5 px-4 flex-1 justify-center mr-2"
                           >
-                            <Image source={location} className="w-4 h-4 mr-1.5 tint-purple-600" style={{ tintColor: '#9333ea' }} />
+                            <Image source={location} className="w-4 h-4 mr-1.5" style={{ tintColor: '#9333ea' }} />
                             <Text className="text-purple-600 text-sm font-bold">Directions</Text>
                           </TouchableOpacity>
 
@@ -343,6 +337,7 @@ export default function PhotoSpots() {
                       </View>
                     </View>
                   )}
+
                 </View>
               );
             })}

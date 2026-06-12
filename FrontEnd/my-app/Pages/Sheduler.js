@@ -1,16 +1,14 @@
 import "../global.css";
-import React from "react";
-import { View, Text, Image, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Calander from '../assets/event.png';
 import Plus from '../assets/plus.png';
 import calander2 from '../assets/schedule.png';
 import { useNavigation, useIsFocused } from "@react-navigation/native";
-import { useState, useEffect } from "react";
-import logo from '../assets/search.png';
 import bin from '../assets/delete.png';
+import world from '../assets/world-map.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 
 export default function TourPlaning() {
     const navigation = useNavigation();
@@ -30,6 +28,16 @@ export default function TourPlaning() {
         }
     };
 
+    const deleteTask = async (index) => {
+        try {
+            const updated = task.filter((_, i) => i !== index);
+            setTask(updated);
+            await AsyncStorage.setItem('tasks', JSON.stringify(updated));
+        } catch (err) {
+            console.error('Failed to delete task:', err);
+        }
+    };
+
     const isFocused = useIsFocused();
 
     useEffect(() => {
@@ -37,89 +45,131 @@ export default function TourPlaning() {
             loadTask();
         }
     }, [isFocused]);
+
     return (
         <SafeAreaProvider>
             <SafeAreaView className="bg-white flex-1" edges={['top', 'right', 'left']}>
                 <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-                    <View className="flex-row justify-between px-4 pt-4">
-                        <Text className="text-black font-bold text-2xl flex justify-center">Paris Adventure</Text>
-                        <TouchableOpacity
-                            onPress={() => Alert.alert("Clicked!")}
-                            className="bg-blue-600 rounded-xl px-4 py-2 flex justify-center items-center">
-                            <Text className="text-white text-base font-bold">+  Add</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View className="flex-row pt-3 px-4">
-                        <Image source={Calander} className="w-8 h-8"></Image>
-                        <Text className="text-gray-500 text-xl pt-1 px-3">1 Day Tour</Text>
-                    </View>
-                    <View className="px-4 mt-8">
-                        <View className="bg-blue-700 w-full rounded-2xl border border-gray-200">
-                            <View className="pt-4 px-4 pb-4 flex-row justify-between items-center">
-                                <View className="w-16 h-16 rounded-full relative bg-white/30 flex justify-center items-center">
-                                    <Image source={calander2} className="absolute w-10 h-10"></Image>
-                                </View>
-                                <View className="flex-col flex-1 pl-4">
-                                    <Text className="text-white font-bold text-xl">Day 1</Text>
-                                    <Text className="text-white text-base">Monday, March 15</Text>
-                                </View>
 
-                                <View className="">
-                                    <View className="w-10 h-10 rounded-full relative bg-white/30 flex justify-center items-center">
-                                        <Image source={Plus} className="absolute w-5 h-5"></Image>
+                    {/* Header */}
+                    <View className="px-4 pt-6 pb-4">
+                        <View className="flex-row justify-between items-center">
+                            <View>
+                                <Text className="text-gray-900 font-bold text-2xl">My Tour Plan</Text>
+                                <Text className="text-gray-400 text-sm mt-0.5">Organize your perfect trip</Text>
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => Alert.alert("Clicked!")}
+                                className="bg-blue-600 rounded-2xl px-4 py-2.5 flex-row items-center"
+                                style={{ elevation: 3 }}
+                            >
+                                <Text className="text-white text-sm font-bold">+ Add</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Day infomation */}
+                    <View className="mx-4 mb-4 flex-row items-center bg-blue-50 rounded-2xl px-4 py-3 border border-blue-100">
+                        <Image source={Calander} className="w-7 h-7" />
+                        <View className="ml-3">
+                            <Text className="text-blue-700 font-bold text-base">Day 1 — 1 Day Tour</Text>
+                            <Text className="text-blue-400 text-xs">Monday, March 15</Text>
+                        </View>
+                    </View>
+
+                    <View className="mx-4">
+                        <View className="bg-blue-700 rounded-2xl overflow-hidden" style={{ elevation: 4 }}>
+
+                            <View className="px-4 py-4 flex-row justify-between items-center">
+                                <View className="flex-row items-center">
+                                    <View className="w-14 h-14 rounded-full bg-white/25 justify-center items-center">
+                                        <Image source={calander2} className="w-9 h-9" />
+                                    </View>
+                                    <View className="ml-3">
+                                        <Text className="text-white font-bold text-xl">Day 1</Text>
+                                        <Text className="text-blue-200 text-sm">Monday, March 15</Text>
                                     </View>
                                 </View>
+                                <TouchableOpacity onPress={() => Alert.alert("Clicked!")}>
+                                    <View className="w-10 h-10 rounded-full bg-white/25 justify-center items-center">
+                                        <Image source={Plus} className="w-5 h-5" />
+                                    </View>
+                                </TouchableOpacity>
                             </View>
 
+                            {/* Task List */}
                             <View className="bg-white rounded-b-2xl">
                                 {task.length === 0 ? (
-                                    <Text className="text-gray-400 text-base py-8 text-center">No Tasks Added</Text>
+                                    <View className="py-10 items-center">
+                                        <Image source={world} className="w-5 h-5"></Image>
+                                        <Text className="text-gray-400 text-base font-medium">No stops added yet</Text>
+                                        <Text className="text-gray-300 text-sm mt-1">Add hotels, attractions or restaurants</Text>
+                                    </View>
                                 ) : (
                                     task.map((t, index) => (
                                         <View key={index} className="flex-row justify-between items-center py-4 px-4 border-b border-gray-100">
-                                            <Text className="text-black font-bold text-lg flex-1 pr-2" numberOfLines={1}>
-                                                {t.attraction_name || t.hotel_name}
-                                            </Text>
-                                            <View className="flex-row ml-2">
-                                                <TouchableOpacity onPress={() => {
-                                                    if (t.hotel_name) navigation.navigate("Hotels", { hotel: t });
-                                                    else navigation.navigate("Attraction", { place: t })
-                                                }}
-                                                    className="bg-blue-600 flex justify-center items-center rounded-xl px-4 py-2">
-                                                    <Text className="text-white text-sm font-bold">View</Text>
+                                            <View className="flex-row items-center flex-1 pr-2">
+                                                <View className="bg-blue-50 w-8 h-8 rounded-full justify-center items-center mr-3">
+                                                    <Text className="text-blue-600 text-xs font-bold">{index + 1}</Text>
+                                                </View>
+                                                <Text className="text-gray-900 font-bold text-base flex-1" numberOfLines={1}>
+                                                    {t.attraction_name || t.hotel_name || t.restaurant_name}
+                                                </Text>
+                                            </View>
+                                            <View className="flex-row items-center ml-2">
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        if (t.hotel_name) navigation.navigate("Hotels", { hotel: t });
+                                                        else if (t.restaurant_name) navigation.navigate("Resturants", { resturant: t });
+                                                        else navigation.navigate("Attraction", { place: t });
+                                                    }}
+                                                    className="bg-blue-600 rounded-xl px-3 py-1.5"
+                                                >
+                                                    <Text className="text-white text-xs font-bold">View</Text>
                                                 </TouchableOpacity>
-                                                <Image source={bin} className="w-9 h-9 ml-2"></Image>
+                                                <TouchableOpacity
+                                                    onPress={() => deleteTask(index)}
+                                                    className="ml-2 bg-red-50 rounded-xl p-2"
+                                                >
+                                                    <Image source={bin} className="w-5 h-5" />
+                                                </TouchableOpacity>
                                             </View>
                                         </View>
                                     ))
                                 )}
+
+                                {task.length > 0 && (
+                                    <View className="px-4 py-3">
+                                        <Text className="text-gray-400 text-xs text-center">{task.length} stop{task.length !== 1 ? 's' : ''} planned</Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
                     </View>
+
                 </ScrollView>
-                <View className="absolute bottom-0 h-20 w-full bg-white border-t border-gray-200 flex-row justify-around items-center">
+
+                {/* Bottom Navigation */}
+                <View className="absolute bottom-0 w-full bg-white pt-3 pb-5 px-8 flex-row justify-between items-center border-t border-gray-100" style={{ elevation: 10 }}>
                     <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Home")}>
-                        <Text className="text-[16px] font-medium">Home</Text>
+                        <View className="w-1.5 h-1.5 rounded-full mb-1" />
+                        <Text className="text-[13px] font-medium text-gray-400">Home</Text>
                     </TouchableOpacity>
-
-                    <TouchableOpacity
-                        className="items-center" onPress={() => navigation.navigate("Explore")}>
-                        <Text className="text-[16px] font-medium">Explore</Text>
+                    <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Explore")}>
+                        <View className="w-1.5 h-1.5 rounded-full mb-1" />
+                        <Text className="text-[13px] font-medium text-gray-400">Explore</Text>
                     </TouchableOpacity>
-
-                    <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Tour Planing")}>
-                        <Text className="text-[16px] font-medium">Sheduler</Text>
-                    </TouchableOpacity>
-
+                    <View className="items-center">
+                        <View className="w-1.5 h-1.5 bg-blue-500 rounded-full mb-1" />
+                        <Text className="text-[13px] font-bold text-blue-500">Schedule</Text>
+                    </View>
                     <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Profile")}>
-                        <Text className="text-[16px] font-medium">Profile</Text>
+                        <View className="w-1.5 h-1.5 rounded-full mb-1" />
+                        <Text className="text-[13px] font-medium text-gray-400">Profile</Text>
                     </TouchableOpacity>
-
                 </View>
-
 
             </SafeAreaView>
         </SafeAreaProvider>
-    )
-
+    );
 }

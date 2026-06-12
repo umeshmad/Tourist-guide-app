@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {View, Image, Text, ScrollView, TextInput, TouchableOpacity, Alert} from 'react-native';
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { View, Image, Text, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
@@ -19,15 +19,15 @@ import rest from '../assets/rest.png';
 import Resturants from './Resturants';
 
 
-export default function Search(){
+export default function Search() {
     const navigation = useNavigation();
     const [search, setsearch] = useState();
     const [searchResults, setSearchResults] = useState([]);
-    const [userLocation,setUserLocation]=useState(null);
-    const [hotels,setHotels]=useState();
-    const [hotelSearchResult,setHotelSearchResult]=useState(null);
+    const [userLocation, setUserLocation] = useState(null);
+    const [hotels, setHotels] = useState();
+    const [hotelSearchResult, setHotelSearchResult] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [popular,setPopular]=useState([]);
+    const [popular, setPopular] = useState([]);
 
 
     const fetchSearchResults = async (query) => {
@@ -39,29 +39,29 @@ export default function Search(){
             const res = await fetch(`${BASE_URL}/search?q=${query}`);
             const data = await res.json();
             setSearchResults(data);
-            } catch (err) {
-                console.error(err);
-            }
-         };
-    const fetchHotelsNearMe=async()=>{
-        try{
-            const{status}=await Location.requestForegroundPermissionsAsync();
-            if(status !== 'granted'){
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    const fetchHotelsNearMe = async () => {
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
                 Alert.alert("Permission Denied", "Allow location access to find hotels near you.");
                 return;
             }
             setLoading(true);
-            const locationData=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.High});
-            const {longitude,latitude}=locationData.coords;
-            setUserLocation({longitude,latitude});
+            const locationData = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+            const { longitude, latitude } = locationData.coords;
+            setUserLocation({ longitude, latitude });
 
-            const res=await fetch (`${BASE_URL}/Hotels/nearby?longitude=${longitude}&latitude=${latitude}`);
-            const data=await res.json();
+            const res = await fetch(`${BASE_URL}/Hotels/nearby?longitude=${longitude}&latitude=${latitude}`);
+            const data = await res.json();
 
-            navigation.navigate("Hotels",{hotels:data})   
-        }catch(err){
+            navigation.navigate("Hotels", { hotels: data })
+        } catch (err) {
             console.error(err);
-        }finally{
+        } finally {
             setLoading(false);
         }
     };
@@ -81,27 +81,29 @@ export default function Search(){
             });
     }, []);
 
-    const fetchItalianResturants=async()=>{
-        try{
-            const italian=await fetch(`${BASE_URL}/Resturants?category=Italian`)
-            const data=await italian.json();
-            navigation.navigate("Resturants",{resturant:data, filterLabel:"Italian"})
-        }catch(err){
+    const fetchItalianResturants = async () => {
+        try {
+            const italian = await fetch(`${BASE_URL}/Resturants?category=Italian`)
+            const data = await italian.json();
+            navigation.navigate("Resturants", { resturant: data, filterLabel: "Italian" })
+        } catch (err) {
             console.error(err);
         }
     }
 
-    return(
+    return (
         <SafeAreaProvider>
-            <SafeAreaView className="bg-white flex-1" edges={['top','left','right']}>
+            <SafeAreaView className="bg-white flex-1" edges={['top', 'left', 'right']}>
 
-                <View className="justify-start pt-6 px-4">
-                    <View className="flex-row items-center border border-gray-300 rounded-3xl py-2 px-2">
-                        <Image source={logo} className="w-6 h-6 ml-2"/>
-                        <TextInput 
-                            placeholder="Search places, activities..." 
-                            className="pl-3 text-[15px] flex-1"
-                            style={{ letterSpacing: 2 }}
+                {/* Header and Search */}
+                <View className="px-5 pt-5 pb-3">
+                    <Text className="text-2xl font-bold text-gray-900 mb-4">Discover</Text>
+                    <View className="flex-row items-center bg-gray-100 rounded-2xl py-3 px-4">
+                        <Image source={logo} className="w-5 h-5 opacity-50" />
+                        <TextInput
+                            placeholder="Search places, activities..."
+                            placeholderTextColor="#9CA3AF"
+                            className="pl-3 text-[15px] flex-1 text-gray-700"
                             onChangeText={(text) => {
                                 setsearch(text);
                                 fetchSearchResults(text);
@@ -110,144 +112,180 @@ export default function Search(){
                     </View>
                 </View>
 
+                {/* Search Results */}
                 {searchResults.length > 0 && (
-                    <ScrollView className="px-4 mt-3" style={{maxHeight: 300}}>
+                    <ScrollView className="px-5 mt-1 bg-white rounded-2xl border border-gray-100 mx-5 absolute top-36 z-50 w-[87%]"
+                        style={{ maxHeight: 200, elevation: 8 }}>
                         {searchResults.map((place, index) => (
                             <View
                                 key={index}
-                                className="border-b border-gray-200 py-3"
+                                className="border-b border-gray-100 py-3 px-1"
                             >
-                                <Text className="text-black text-base font-bold">{place.attraction_name}</Text>
+                                <Text className="text-gray-800 text-base font-medium">{place.attraction_name}</Text>
                             </View>
                         ))}
                     </ScrollView>
                 )}
 
-                <View className="flex-row justify-between pt-6 px-4 pb-4">
-                    <TouchableOpacity onPress={() => navigation.navigate("Hotels")}>
-                    <View className="bg-blue-100 border border-gray-200 flex-1 h-16 mr-2 rounded-xl justify-center items-center flex-row">
-                        <Image source={Sleep} className="h-10 w-10 mb-2"/>
-                        <Text className="text-blue-500 text-lg font-bold pl-2">Hotels</Text>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+
+                    {/* Category Buttons */}
+                    <View className="flex-row px-5 pt-2 pb-3">
+                        <TouchableOpacity className="flex-1 mr-2" onPress={() => navigation.navigate("Hotels")}>
+                            <View className="bg-blue-50 h-16 rounded-2xl justify-center items-center flex-row border border-blue-100">
+                                <Image source={Sleep} className="h-7 w-7" />
+                                <Text className="text-blue-600 text-sm font-bold pl-2">Hotels</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity className="flex-1 mx-1" onPress={() => navigation.navigate("Resturants")}>
+                            <View className="bg-emerald-50 h-16 rounded-2xl justify-center items-center flex-row border border-emerald-100">
+                                <Image source={rest} className="h-7 w-7" />
+                                <Text className="text-emerald-600 text-sm font-bold pl-2">Foods</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity className="flex-1 ml-2" onPress={() => navigation.navigate("Attraction")}>
+                            <View className="bg-rose-50 h-16 rounded-2xl justify-center items-center flex-row border border-rose-100">
+                                <Image source={Locationping} className="h-6 w-6" />
+                                <Text className="text-rose-500 text-sm font-bold pl-2">Places</Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
-                    </TouchableOpacity>
 
-                    <TouchableOpacity className="bg-green-100 border border-gray-200 flex-1 h-16 mx-1 rounded-xl justify-center items-center flex-row" onPress={() => navigation.navigate("Resturants")}>
-                        <Image source={rest} className="h-10 w-10"/>
-                        <Text className="text-green-600 text-lg font-bold pl-2">Restaurant</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity onPress={() => navigation.navigate("Attraction")}>
-                    <View className="bg-red-100 border border-gray-200 flex-1 h-16 ml-2 rounded-xl justify-center items-center flex-row">
-                        <Image source={Locationping} className="h-8 w-8"/>
-                        <Text className="text-red-500 text-lg font-bold pl-2">Attractions</Text>
+                    {/* Popular Searches */}
+                    <View className="px-5 pt-4">
+                        <Text className="text-lg font-bold text-gray-900">Popular Searches</Text>
                     </View>
-                    </TouchableOpacity>
-                </View>
 
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:40}}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
+                        <View className="flex-row px-5">
+                            {popular.map((place, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    onPress={() => {
+                                        navigation.navigate("Attraction", { place });
+                                    }}
+                                    className="rounded-2xl overflow-hidden mr-3 relative w-44"
+                                    style={{ elevation: 4 }}>
+                                    <Image
+                                        source={{ uri: place.image_url }}
+                                        className="h-36 w-full"
+                                        resizeMode="cover"
+                                    />
+                                    <View className="absolute bg-black/40 top-0 left-0 right-0 bottom-0 justify-end p-3 rounded-2xl">
+                                        <Text className="text-white font-bold text-sm" numberOfLines={1}>
+                                            {place.attraction_name}
+                                        </Text>
+                                        <Text className="text-white/70 text-xs mt-1">{place.city}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </ScrollView>
 
-                <Text className="text-xl font-bold text-black pl-4 pt-4">Popular Searches</Text>
+                    {/* Recent Searches */}
+                    <View className="px-5 pt-6">
+                        <Text className="text-lg font-bold text-gray-900 mb-3">Recent Searches</Text>
+                    </View>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row pt-3 px-4">
-                        {popular.map((place, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                onPress={() => {
-                                    navigation.navigate("Attraction", { place });
-                                }}
-                                className="rounded-xl overflow-hidden mr-3 relative w-40">
-                                <Image
-                                    source={{ uri: place.image_url }}
-                                    className="h-32 w-40"
-                                    resizeMode="cover"
-                                />
-                                <View className="absolute bg-black/50 top-0 left-0 right-0 bottom-0 justify-end p-2">
-                                    <Text className="text-white font-bold text-sm" numberOfLines={1}>
-                                        {place.attraction_name}
-                                    </Text>
-                                    <Text className="text-white text-xs">{place.city}</Text>
+                    <View className="px-5">
+                        <TouchableOpacity onPress={fetchHotelsNearMe}>
+                            <View className="h-14 bg-white border border-gray-100 rounded-2xl flex-row items-center px-3 mb-3"
+                                style={{ elevation: 2 }}>
+                                <View className="bg-blue-50 rounded-xl w-10 h-10 justify-center items-center">
+                                    <Image source={Sleep} className="h-5 w-5" />
                                 </View>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </ScrollView>
-
-                <Text className="text-xl font-bold text-black pl-4 pt-4">Recent Searches</Text>
-
-                <View className="w-[92%] self-center mt-5 h-16 bg-gray-50 rounded-xl flex-row items-center px-4">
-                    <View className="relative bg-blue-200 rounded-xl w-16 h-12 ">
-                        <Image source={Sleep} className="h-10 w-10 absolute ml-3"/>
-                    </View>
-                    <TouchableOpacity onPress={
-                        fetchHotelsNearMe
-                    }>
-                    <Text className="text-black text-lg pl-3 font-medium">Hotels near me</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View className="w-[92%] self-center mt-4 h-16 bg-gray-50 rounded-xl flex-row items-center px-4">
-                    <View className="relative bg-green-100 rounded-xl w-16 h-12 ">
-                        <Image source={Hiking} className="h-10 w-10 absolute ml-3"/>
-                    </View>
-                    <Text className="text-black text-lg pl-3 font-medium">Tours near me</Text>
-                </View>
-                <TouchableOpacity onPress={fetchItalianResturants}>
-                <View className="w-[92%] self-center mt-4 h-16 bg-gray-50 rounded-xl flex-row items-center px-4">
-                    <View className="relative bg-red-100 rounded-xl w-16 h-12 ">
-                        <Image source={Resturant} className="h-10 w-10 absolute ml-3"/>
-                    </View>
-                    <Text className="text-black text-lg pl-3 font-medium">Italian Restaurants</Text>
-                </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={()=>navigation.navigate("PhotoSpots")}>
-                <View className="w-[92%] self-center mt-4 h-16 bg-gray-50 rounded-xl flex-row items-center px-4">
-                    <View className="relative bg-purple-100 rounded-xl w-16 h-12 ">
-                        <Image source={Camara} className="h-10 w-10 absolute ml-3"/>
-                    </View>
-                    <Text className="text-black text-lg pl-3 font-medium">Photography spots</Text>
-                </View>
-                </TouchableOpacity>
-
-                <Text className="text-xl font-bold text-black pl-4 pt-4 pb-3">Suggested for you</Text>
-                <View className="mt-3 px-4">
-                    <View className="mb-4">
-                        <View className="w-full border border-gray-200 rounded-xl flex-row">
-                            <Image source={Eiffel} className="h-20 w-20 rounded-xl my-4 mx-4"/>
-                            <View className="pt-6">
-                                <Text className="text-black font-medium text-xl">Place name</Text>
-                                <Text className="text-black text-l">Historic </Text>
+                                <Text className="text-gray-800 text-[15px] pl-3 font-medium flex-1">Hotels near me</Text>
+                                <Text className="text-gray-300 text-lg">›</Text>
                             </View>
-                            <Image source={Star} className="h-8 w-8 mt-8 ml-24"/>
-                            <Text className="text-gray font-thin text-l mt-10 ml-4">4.8</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity>
+                            <View className="h-14 bg-white border border-gray-100 rounded-2xl flex-row items-center px-3 mb-3"
+                                style={{ elevation: 2 }}>
+                                <View className="bg-emerald-50 rounded-xl w-10 h-10 justify-center items-center">
+                                    <Image source={Hiking} className="h-5 w-5" />
+                                </View>
+                                <Text className="text-gray-800 text-[15px] pl-3 font-medium flex-1">Tours near me</Text>
+                                <Text className="text-gray-300 text-lg">›</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={fetchItalianResturants}>
+                            <View className="h-14 bg-white border border-gray-100 rounded-2xl flex-row items-center px-3 mb-3"
+                                style={{ elevation: 2 }}>
+                                <View className="bg-orange-50 rounded-xl w-10 h-10 justify-center items-center">
+                                    <Image source={Resturant} className="h-5 w-5" />
+                                </View>
+                                <Text className="text-gray-800 text-[15px] pl-3 font-medium flex-1">Italian Restaurants</Text>
+                                <Text className="text-gray-300 text-lg">›</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => navigation.navigate("PhotoSpots")}>
+                            <View className="h-14 bg-white border border-gray-100 rounded-2xl flex-row items-center px-3 mb-3"
+                                style={{ elevation: 2 }}>
+                                <View className="bg-violet-50 rounded-xl w-10 h-10 justify-center items-center">
+                                    <Image source={Camara} className="h-5 w-5" />
+                                </View>
+                                <Text className="text-gray-800 text-[15px] pl-3 font-medium flex-1">Photography spots</Text>
+                                <Text className="text-gray-300 text-lg">›</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Suggested For You */}
+                    <View className="px-5 pt-5">
+                        <Text className="text-lg font-bold text-gray-900 mb-3">Suggested for you</Text>
+                    </View>
+
+                    <View className="px-5">
+                        <View className="mb-3">
+                            <View className="w-full bg-white border border-gray-100 rounded-2xl flex-row p-3 items-center"
+                                style={{ elevation: 3 }}>
+                                <Image source={Eiffel} className="h-16 w-16 rounded-xl" />
+                                <View className="flex-1 pl-3 justify-center">
+                                    <Text className="text-gray-900 font-bold text-base">Eiffel Tower</Text>
+                                    <Text className="text-gray-400 text-xs mt-1">Historic landmark</Text>
+                                </View>
+                                <View className="items-center bg-amber-50 px-2.5 py-1.5 rounded-xl">
+                                    <Image source={Star} className="h-3.5 w-3.5 mb-0.5" />
+                                    <Text className="text-amber-600 font-bold text-xs">4.8</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <View className="mb-3">
+                            <View className="w-full bg-white border border-gray-100 rounded-2xl flex-row p-3 items-center"
+                                style={{ elevation: 3 }}>
+                                <Image source={Place1} className="h-16 w-16 rounded-xl" />
+                                <View className="flex-1 pl-3 justify-center">
+                                    <Text className="text-gray-900 font-bold text-base">Louvre Museum</Text>
+                                    <Text className="text-gray-400 text-xs mt-1">Art & Culture</Text>
+                                </View>
+                                <View className="items-center bg-amber-50 px-2.5 py-1.5 rounded-xl">
+                                    <Image source={Star} className="h-3.5 w-3.5 mb-0.5" />
+                                    <Text className="text-amber-600 font-bold text-xs">4.9</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <View className="mb-3">
+                            <View className="w-full bg-white border border-gray-100 rounded-2xl flex-row p-3 items-center"
+                                style={{ elevation: 3 }}>
+                                <Image source={Place2} className="h-16 w-16 rounded-xl" />
+                                <View className="flex-1 pl-3 justify-center">
+                                    <Text className="text-gray-900 font-bold text-base">Notre Dame</Text>
+                                    <Text className="text-gray-400 text-xs mt-1">Historic landmark</Text>
+                                </View>
+                                <View className="items-center bg-amber-50 px-2.5 py-1.5 rounded-xl">
+                                    <Image source={Star} className="h-3.5 w-3.5 mb-0.5" />
+                                    <Text className="text-amber-600 font-bold text-xs">4.7</Text>
+                                </View>
+                            </View>
                         </View>
                     </View>
-
-                    <View className="mb-4">
-                        <View className="w-full border border-gray-200 rounded-xl flex-row">
-                            <Image source={Place1} className="h-20 w-20 rounded-xl my-4 mx-4"/>
-                            <View className="pt-6">
-                                <Text className="text-black font-medium text-xl">Place name</Text>
-                                <Text className="text-black text-l">Historic </Text>
-                            </View>
-                            <Image source={Star} className="h-8 w-8 mt-8 ml-24"/>
-                            <Text className="text-gray font-thin text-l mt-10 ml-4">4.8</Text>
-                        </View>
-                    </View>
-
-                    <View className="mb-4">
-                        <View className="w-full border border-gray-200 rounded-xl flex-row">
-                            <Image source={Place2} className="h-20 w-20 rounded-xl my-4 mx-4"/>
-                            <View className="pt-6">
-                                <Text className="text-black font-medium text-xl">Place name</Text>
-                                <Text className="text-black text-l">Historic </Text>
-                            </View>
-                            <Image source={Star} className="h-8 w-8 mt-8 ml-24"/>
-                            <Text className="text-gray font-thin text-l mt-10 ml-4">4.8</Text>
-                        </View>
-                    </View>
-                </View>
 
                 </ScrollView>
 
