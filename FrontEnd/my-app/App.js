@@ -3,6 +3,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import "./global.css";
 
+import Login from './Pages/Login';
+import Register from './Pages/Register';
+import Preferences from './Pages/Preferences';
+import Festivals from './Pages/Festivals';
 import Home from './Pages/Home';
 import Explore from './Pages/Explore';
 import Sheduler from './Pages/Sheduler';
@@ -18,7 +22,11 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={Register} options={{ headerShown: false }} />
+        <Stack.Screen name="Preferences" component={Preferences} options={{ headerShown: false }} />
+        <Stack.Screen name="Festivals" component={Festivals} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Explore" component={Explore}/>
         <Stack.Screen name="Tour Planing" component={Sheduler}/>

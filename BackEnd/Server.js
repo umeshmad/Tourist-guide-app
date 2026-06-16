@@ -6,6 +6,7 @@ app.use(cors());
 app.use(express.json());
 const dns = require("dns");
 const { features } = require("process");
+const { default: BASE_URL } = require("../FrontEnd/my-app/config");
 
 const uri = "mongodb+srv://umeshmaduwantha:Passivevoice%4010@cluster0.oymmo9e.mongodb.net/yourDatabaseName?retryWrites=true&w=majority&appName=Cluster0";
 const client = new MongoClient(uri);
@@ -249,7 +250,69 @@ app.get("/popular",async(req,res)=>{
   }catch(err){
     res.status(500).json({error:"Something went wrong"})
   }
+});
+
+app.get("/weather",async(req,res)=>{
+  try{
+    const lat = req.query.lat;
+    const lon = req.query.lon;
+
+    const responce=await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,wind_speed_10m`
+    );
+    const data=await responce.json();
+    res.json(data.current);
+  }catch(err){
+    res.status(500).json({error:"Weather fetch failed"});
+  }
 })
+
+app.get("/weather/alert", async (req, res) => {
+  try {
+    const lat = req.query.lat;
+    const lon = req.query.lon;
+
+    const responce = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,wind_speed_10m,rain`
+    );
+    const data = await responce.json();
+    const current = data.current;
+
+    const rain = current.rain || 0;
+    const wind = current.wind_speed_10m || 0;
+
+    const attractions = await db.collection("Attraction_places").find({
+      latitude: { $gte: parseFloat(lat) - 0.5, $lte: parseFloat(lat) + 0.5 },
+      longitude: { $gte: parseFloat(lon) - 0.5, $lte: parseFloat(lon) + 0.5 },
+    }).toArray();
+
+    const alerts = [];
+
+    attractions.forEach((place) => {
+      if (rain >= (place.rain_red_mm || 150)) {
+        alerts.push({ level: "red", place: place.attraction_name, message: `Extreme rainfall warning at ${place.attraction_name}. Avoid visiting.` });
+      } else if (rain >= (place.rain_amber_mm || 100)) {
+        alerts.push({ level: "amber", place: place.attraction_name, message: `Heavy rain warning at ${place.attraction_name}. Visit with caution.` });
+      } else if (rain >= (place.rain_yellow_mm || 75)) {
+        alerts.push({ level: "yellow", place: place.attraction_name, message: `Moderate rain at ${place.attraction_name}. Be prepared.` });
+      }
+
+      if (wind >= (place.wind_danger_kmph || 75)) {
+        alerts.push({ level: "red", place: place.attraction_name, message: `Dangerous winds at ${place.attraction_name}. Do not visit.` });
+      } else if (wind >= (place.wind_warning_kmph || 55)) {
+        alerts.push({ level: "amber", place: place.attraction_name, message: `Strong wind warning at ${place.attraction_name}.` });
+      } else if (wind >= (place.wind_advisory_kmph || 40)) {
+        alerts.push({ level: "yellow", place: place.attraction_name, message: `Wind advisory at ${place.attraction_name}.` });
+      }
+    });
+
+    res.json({ rain, wind, alerts });
+
+  } catch (err) {
+    res.status(500).json({ error: "Alert fetch failed" });
+  }
+});
+
 
 
 async function createServer() {

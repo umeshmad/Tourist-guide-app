@@ -61,8 +61,8 @@ export default function Hotel() {
     const singleHotel = Route.params?.hotel;
 
     useEffect(() => {
-        if (Route.params?.hotel) {
-            const hotelParam = Route.params.hotel;
+        const hotelParam = Route.params?.hotel || Route.params?.hotels;
+        if (hotelParam) {
             const hotelsArray = Array.isArray(hotelParam) ? hotelParam : [hotelParam];
             setHotels(hotelsArray);
             setOriginalHotels(hotelsArray);
@@ -136,6 +136,30 @@ export default function Hotel() {
             navigation.replace('Tour Planing');
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const addHotelAndAttractions = async (hotel, index) => {
+        try {
+            const saved = await AsyncStorage.getItem('tasks');
+            let tasks = saved ? JSON.parse(saved) : [];
+
+            const hotelExists = tasks.some(t => t.hotel_name === hotel.hotel_name);
+            if (!hotelExists) {
+                tasks.push(hotel);
+            }
+            const attractions = nearbymap[index] || [];
+            attractions.forEach(attr => {
+                const attrExists = tasks.some(t => t.attraction_name === attr.attraction_name);
+                if (!attrExists) {
+                    tasks.push(attr);
+                }
+            });
+
+            await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+            navigation.replace('Tour Planing');
+        } catch (err) {
+            console.error('Failed to save hotel and attractions:', err);
         }
     };
 
@@ -245,6 +269,9 @@ export default function Hotel() {
                                                         <Image source={star} className="h-3.5 w-3.5" />
                                                         <Text className="text-gray-700 text-xs font-semibold pl-1">{hotel.star_rating}</Text>
                                                         <Text className="text-gray-400 text-xs pl-1.5">({hotel.review_count} reviews)</Text>
+                                                        {hotel.distanceKm != null && (
+                                                            <Text className="text-gray-400 text-xs pl-1.5">• {hotel.distanceKm}Km away</Text>
+                                                        )}
                                                     </View>
                                                 </View>
                                                 <TouchableOpacity
@@ -280,7 +307,9 @@ export default function Hotel() {
                                                         <Image source={star} className="h-5 w-5" />
                                                         <Text className="text-l font-medium text-black pl-2">{hotel.star_rating}</Text>
                                                         <Text className="text-sm font-medium text-gray-400 pl-2">({hotel.review_count})</Text>
-                                                        <Text className="text-sm font-medium text-gray-400 pl-2">• 1.2Km away</Text>
+                                                        {hotel.distanceKm != null && (
+                                                            <Text className="text-sm font-medium text-gray-400 pl-2">• {hotel.distanceKm}Km away</Text>
+                                                        )}
                                                     </View>
                                                 </View>
                                                 <View className="flex items-end pl-4 pt-4">
@@ -347,7 +376,7 @@ export default function Hotel() {
                                             )}
 
                                             <View className="flex items-center px-3 pb-6">
-                                                <TouchableOpacity onPress={() => Alert.alert("Clicked")} className="bg-red-400 rounded-3xl border border-gray-100 h-12 w-64 flex justify-center items-center">
+                                                <TouchableOpacity onPress={() => addHotelAndAttractions(hotel, index)} className="bg-red-400 rounded-3xl border border-gray-100 h-12 w-64 flex justify-center items-center">
                                                     <Text className="text-xl font-bold text-white">Add to To-Do list</Text>
                                                 </TouchableOpacity>
                                             </View>

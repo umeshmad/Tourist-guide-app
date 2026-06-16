@@ -111,7 +111,7 @@ export default function Profile() {
                     {/* Logout */}
                     <View className="px-4 pb-6">
                         <TouchableOpacity
-                            onPress={() => Alert.alert("Clicked")}
+                            onPress={() => navigation.navigate("Login")}
                             className="bg-red-500 rounded-2xl py-4 items-center"
                             style={{ elevation: 2 }}
                         >

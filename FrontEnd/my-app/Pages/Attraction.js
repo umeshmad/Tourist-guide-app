@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, TouchableOpacity, Image, ScrollView, TextInput, FlatList } from 'react-native';
+import { Text, View, TouchableOpacity, Image, ScrollView, TextInput, FlatList, Linking } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
 import logo from '../assets/search.png';
@@ -61,6 +61,12 @@ export default function Attraction() {
         item => item.num_reviews >= 5000
     ) : [];
 
+    const handleOpenMap = (link) => {
+        Linking.openURL(link).catch(() => {
+            Alert.alert("Error", "Could not open map link");
+        });
+    };
+
     const logClick = async (attraction) => {
         try {
             await fetch(`${BASE_URL}/log/click`, {
@@ -71,7 +77,7 @@ export default function Attraction() {
                     attraction_name: attraction.attraction_name,
                 })
             });
-        } catch (err) {}
+        } catch (err) { }
     };
 
     useEffect(() => {
@@ -257,8 +263,8 @@ export default function Attraction() {
                                         <View className="h-[1px] bg-gray-200 my-4" />
 
                                         <View className="flex-row justify-between items-center">
-                                            <TouchableOpacity onPress={() => setExpand(null)} className="flex-1 border border-orange-500 rounded-3xl py-3 mr-2 justify-center items-center">
-                                                <Text className="text-orange-500 text-l font-bold">Close</Text>
+                                            <TouchableOpacity onPress={() => handleOpenMap(item.google_maps_url)} className="flex-1 border border-orange-500 rounded-3xl py-3 mr-2 justify-center items-center">
+                                                <Text className="text-orange-500 text-l font-bold">Get Direction</Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity onPress={() => addToTasks(item)} className="flex-1 bg-orange-500 rounded-3xl py-3 ml-2 justify-center items-center">
                                                 <Text className="text-white text-l font-bold">+ Add to Plan</Text>
