@@ -38,6 +38,7 @@ const POPULAR = [
 
 export default function Home() {
   const navigation = useNavigation();
+  const [attraction, setAttraction] = useState([]);
   const [lkrAmount, setLkrAmount] = useState('1000');
   const [foreignAmount, setForeignAmount] = useState('3.31');
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
@@ -59,9 +60,9 @@ export default function Home() {
     AUD: 201.20,
   };
 
-  const [alerts,setAlerts]=useState([]);
+  const [alerts, setAlerts] = useState([]);
 
-  
+
 
   const handleLkrChange = (val) => {
     setLkrAmount(val);
@@ -128,13 +129,25 @@ export default function Home() {
         }))
         .catch(() => { });
       fetch(`${BASE_URL}/weather/alert?lat=${lat}&lon=${lon}`)
-      .then(t=>t.json())
-      .then(data=>setAlerts(data.alerts|| []))
-      .catch(()=>{ })
+        .then(t => t.json())
+        .then(data => setAlerts(data.alerts || []))
+        .catch(() => { });
+
+      fetch(`${BASE_URL}/Attraction`)
+        .then(t => t.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setAttraction(data);
+          }
+        })
+        .catch(() => { });
 
     })();
   }, []);
 
+  const populerDestination = Array.isArray(attraction) ? attraction.filter(
+    item => item.num_reviews >= 5000
+  ).slice(0, 10) : [];
 
   return (
     <SafeAreaProvider>
@@ -188,27 +201,24 @@ export default function Home() {
               {alerts.slice(0, 2).map((alert, i) => (
                 <View
                   key={i}
-                  className={`rounded-2xl p-4 flex-row items-start mb-2 ${
-                    alert.level === 'red' ? 'bg-red-50 border border-red-100' :
+                  className={`rounded-2xl p-4 flex-row items-start mb-2 ${alert.level === 'red' ? 'bg-red-50 border border-red-100' :
                     alert.level === 'amber' ? 'bg-orange-50 border border-orange-100' :
-                    'bg-yellow-50 border border-yellow-100'
-                  }`}
+                      'bg-yellow-50 border border-yellow-100'
+                    }`}
                   style={{ elevation: 1 }}
                 >
                   <Image source={crisis} className="h-5 w-5"></Image>
                   <View className="flex-1">
-                    <Text className={`font-bold text-sm ${
-                      alert.level === 'red' ? 'text-red-800' :
+                    <Text className={`font-bold text-sm ${alert.level === 'red' ? 'text-red-800' :
                       alert.level === 'amber' ? 'text-orange-800' :
-                      'text-yellow-800'
-                    }`}>
+                        'text-yellow-800'
+                      }`}>
                       {alert.place}
                     </Text>
-                    <Text className={`text-xs mt-0.5 leading-4 ${
-                      alert.level === 'red' ? 'text-red-600' :
+                    <Text className={`text-xs mt-0.5 leading-4 ${alert.level === 'red' ? 'text-red-600' :
                       alert.level === 'amber' ? 'text-orange-600' :
-                      'text-yellow-600'
-                    }`}>
+                        'text-yellow-600'
+                      }`}>
                       {alert.message}
                     </Text>
                   </View>
@@ -333,18 +343,33 @@ export default function Home() {
               <Text className="font-bold text-lg text-gray-900">Popular Destinations</Text>
             </View>
 
-            {POPULAR.map((item, i) => (
-              <View key={i} className="bg-white p-3 rounded-2xl mb-3 flex-row items-center border border-gray-100" style={{ elevation: 3 }}>
-                <Image source={{ uri: item.uri }} className="h-16 w-16 rounded-xl mr-3" resizeMode="cover" />
-                <View className="flex-1">
-                  <Text className="text-base font-bold text-gray-900">{item.name}</Text>
-                  <Text className="text-gray-400 text-xs mt-1">{item.sub}</Text>
-                </View>
-                <View className={`${item.ratingBg} px-2 py-1 rounded-lg`}>
-                  <Text className={`${item.ratingText} text-xs font-bold`}>{item.rating}</Text>
-                </View>
-              </View>
-            ))}
+            <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={true} nestedScrollEnabled={true}>
+              {populerDestination.map((item, i) => {
+                const ratingVal = parseFloat(item.rating) || 0;
+                let ratingBg = 'bg-emerald-50';
+                let ratingText = 'text-emerald-500';
+                if (ratingVal >= 4.8) {
+                  ratingBg = 'bg-blue-50';
+                  ratingText = 'text-blue-500';
+                } else if (ratingVal >= 4.6) {
+                  ratingBg = 'bg-amber-50';
+                  ratingText = 'text-amber-500';
+                }
+
+                return (
+                  <View key={i} className="bg-white p-3 rounded-2xl mb-3 flex-row items-center border border-gray-100" style={{ elevation: 3 }}>
+                    <Image source={{ uri: item.image_url }} className="h-16 w-16 rounded-xl mr-3" resizeMode="cover" />
+                    <View className="flex-1">
+                      <Text className="text-base font-bold text-gray-900">{item.attraction_name}</Text>
+                      <Text className="text-gray-400 text-xs mt-1">{item.city}, {item.province}</Text>
+                    </View>
+                    <View className={`${ratingBg} px-2 py-1 rounded-lg`}>
+                      <Text className={`${ratingText} text-xs font-bold`}>{item.rating} ★</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
           </View>
 
         </ScrollView>

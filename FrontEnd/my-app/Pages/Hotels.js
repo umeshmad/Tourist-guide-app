@@ -126,12 +126,14 @@ export default function Hotel() {
 
     const addHotel = async (hotel) => {
         try {
-            const saved = await AsyncStorage.getItem('tasks');
+            const dayID = Route.params?.dayID || 1;
+            const storageKey = `task_day_${dayID}`;
+            const saved = await AsyncStorage.getItem(storageKey);
             const tasks = saved ? JSON.parse(saved) : [];
             const exists = tasks.some(t => t.hotel_name === hotel.hotel_name);
             if (!exists) {
                 tasks.push(hotel);
-                await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+                await AsyncStorage.setItem(storageKey, JSON.stringify(tasks));
             }
             navigation.replace('Tour Planing');
         } catch (err) {
@@ -141,7 +143,9 @@ export default function Hotel() {
 
     const addHotelAndAttractions = async (hotel, index) => {
         try {
-            const saved = await AsyncStorage.getItem('tasks');
+            const dayID = Route.params?.dayID || 1;
+            const storageKey = `task_day_${dayID}`;
+            const saved = await AsyncStorage.getItem(storageKey);
             let tasks = saved ? JSON.parse(saved) : [];
 
             const hotelExists = tasks.some(t => t.hotel_name === hotel.hotel_name);
@@ -156,7 +160,7 @@ export default function Hotel() {
                 }
             });
 
-            await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+            await AsyncStorage.setItem(storageKey, JSON.stringify(tasks));
             navigation.replace('Tour Planing');
         } catch (err) {
             console.error('Failed to save hotel and attractions:', err);

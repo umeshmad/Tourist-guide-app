@@ -1,21 +1,37 @@
 import React, { useState } from 'react';
 import '../global.css';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView,Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import plane from '../assets/plane.png';
+import BASE_URL from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function Login({ navigation }) {
-    const [email, setEmail] = useState('admin@gmail.com');
-    const [password, setPassword] = useState('admin');
+    const [email, setEmail] = useState('umesh1234@gmail.com');
+    const [password, setPassword] = useState('12345678');
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert("Error", "Please fill in all fields");
             return;
         }
-        // User can connect their actual backend here
-        Alert.alert("Success", `Logging in as ${email}`);
-        navigation.navigate("Home");
+        try {
+            const responce = await fetch(`${BASE_URL}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await responce.json();
+            if (!responce.ok) {
+                Alert.alert("Error", data.error);
+                return;
+            }
+            await AsyncStorage.setItem('userEmail', email);
+            navigation.navigate("Home");
+        } catch (err) {
+            Alert.alert("Error", "Could not connect to server");
+        }
     };
 
     return (
@@ -29,7 +45,7 @@ export default function Login({ navigation }) {
                                 <Image className="text-3xl" source={plane}></Image>
                             </View>
                             <Text className="text-2xl font-bold text-gray-900">Welcome Back</Text>
-                            <Text className="text-gray-400 text-sm mt-1 text-center">
+                            <Text className="text-white text-sm mt-1 text-center">
                                 Log in to continue your travel guide experience
                             </Text>
                         </View>

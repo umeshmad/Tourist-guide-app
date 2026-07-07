@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import '../global.css';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, LayoutAnimation, Platform, UIManager, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import BASE_URL from '../config';
 import calendarIcon from '../assets/calendar_blue.png';
 import religionIcon from '../assets/lotus_amber.png';
 import locationIcon from '../assets/location_red.png';
@@ -14,6 +15,14 @@ import linkIcon from '../assets/link_slate.png';
 import searchIcon from '../assets/search.png';
 import closeIcon from '../assets/close.png';
 import star from '../assets/star.png';
+import KandyEsalaPerahera from '../assets/KandyEsalaPerahera.jpg';
+import KatharagamaFestival from '../assets/KatharagamaFestival.jpg';
+import DuruthPerehara from '../assets/DuruthPerehara.jpg';
+import GalleLittaraly from '../assets/GalleLittaraly.jpg';
+import Posonpoya from '../assets/Posonpoya.jpg';
+import VesakFestival from '../assets/VesakFestival.jpg';
+import SinhalaTamilNewYear from '../assets/SinhalaTamilNewYear.jpg';
+import NallurFestival from '../assets/NallurFestival.jpg';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -41,7 +50,7 @@ const FESTIVAL_DATA = [
         tips: 'Arrive at least 2 hours early to secure a good standing spot.',
         cuisine: 'Kandyan rice and curry, buffalo curd with kithul treacle.',
         attractions: ['Temple of the Tooth', 'Bahirawakanda Buddha', 'Kandy Lake'],
-        image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=800&auto=format&fit=crop&q=80',
+        image: KandyEsalaPerahera,
     },
     {
         id: 'F002', name: 'Vesak Poya Festival', local_name: 'Vesak',
@@ -56,7 +65,7 @@ const FESTIVAL_DATA = [
         tips: 'Walk Colombo streets after dark and try free food from Dansalas.',
         cuisine: 'Vegetarian foods, kokis, kavum, and herbal tea.',
         attractions: ['Kelaniya Temple', 'Gangaramaya Temple', 'Beira Lake'],
-        image: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800&auto=format&fit=crop&q=80',
+        image: VesakFestival,
     },
     {
         id: 'F003', name: 'Sinhala & Tamil New Year', local_name: 'Aluth Avurudhu',
@@ -71,7 +80,7 @@ const FESTIVAL_DATA = [
         tips: 'Accept invitations to local homes — it\'s the best experience.',
         cuisine: 'Kiribath (milk rice), kavum, kokis, and aluwa.',
         attractions: ['Local villages', 'Kandy Botanical Gardens', 'Nuwara Eliya Hills'],
-        image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&auto=format&fit=crop&q=80',
+        image: SinhalaTamilNewYear,
     },
     {
         id: 'F004', name: 'Nallur Festival', local_name: 'Nallur Kandaswamy Kovil Festival',
@@ -86,7 +95,7 @@ const FESTIVAL_DATA = [
         tips: 'The final 3 days feature the iconic golden chariot procession.',
         cuisine: 'Jaffna crab curry, mutton rolls, and palmyra fruit sweets.',
         attractions: ['Jaffna Fort', 'Jaffna Library', 'Delft Island'],
-        image: 'https://images.unsplash.com/photo-1604514685562-f4b21bb9fd37?w=800&auto=format&fit=crop&q=80',
+        image: NallurFestival,
     },
     {
         id: 'F005', name: 'Poson Poya', local_name: 'Poson',
@@ -101,7 +110,7 @@ const FESTIVAL_DATA = [
         tips: 'Climb Mihintale after 8PM for the best atmosphere and candles.',
         cuisine: 'Simple village food — rice, dhal, and fresh king coconut.',
         attractions: ['Ruwanwelisaya', 'Isurumuniya', 'Mihintale Rock'],
-        image: 'https://images.unsplash.com/photo-1627894483216-2138af692e32?w=800&auto=format&fit=crop&q=80',
+        image: Posonpoya,
     },
     {
         id: 'F006', name: 'Duruthu Perahera', local_name: 'Duruthu Perahera',
@@ -116,7 +125,7 @@ const FESTIVAL_DATA = [
         tips: 'Only 30 minutes from Colombo. Starts around 8PM.',
         cuisine: 'Local street foods, hoppers, and kottu roti.',
         attractions: ['Kelaniya Temple', 'Colombo Fort', 'Galle Face Green'],
-        image: 'https://images.unsplash.com/photo-1561361062-85654594183b?w=800&auto=format&fit=crop&q=80',
+        image: DuruthPerehara,
     },
     {
         id: 'F007', name: 'Kataragama Festival', local_name: 'Kataragama Esala Festival',
@@ -131,7 +140,7 @@ const FESTIVAL_DATA = [
         tips: 'Sacred to Buddhist, Hindu, Muslim, and Vedda people simultaneously.',
         cuisine: 'Simple vegetarian pilgrimage food.',
         attractions: ['Yala Safari', 'Bundala Bird Sanctuary', 'Menik River'],
-        image: 'https://images.unsplash.com/photo-1590076275577-c1c992f7b3cc?w=800&auto=format&fit=crop&q=80',
+        image: KatharagamaFestival,
     },
     {
         id: 'F008', name: 'Galle Literary Festival', local_name: 'Galle Literary Festival',
@@ -146,17 +155,46 @@ const FESTIVAL_DATA = [
         tips: 'Book accommodation inside the fort early. Combine with whale-watching.',
         cuisine: 'Seafood, international fusion, and Southern fish curry.',
         attractions: ['Galle Lighthouse', 'Unawatuna Beach', 'Japanese Peace Pagoda'],
-        image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&auto=format&fit=crop&q=80',
+        image: GalleLittaraly,
     },
 ];
+
+const proxyImage = (rawUrl) => {
+    if (!rawUrl) return null;
+    const url = rawUrl.replace(/^"|"$/g, '').trim();
+    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=400`;
+};
 
 export default function Festivals({ navigation }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedCard, setExpandedCard] = useState(null);
+    const [nearbymap, setNearByMap] = useState({});
+    const [nearbyLoading, setNearbyLoading] = useState({});
 
-    const toggle = (id) => {
+    const fetchNearbyAttractionPlaces = async (fest) => {
+        if (nearbymap[fest.id]) return;
+        const names = fest.attractions;
+        if (!names || names.length === 0) return;
+        try {
+            setNearbyLoading(prev => ({ ...prev, [fest.id]: true }));
+            const query = names.join(',');
+            const res = await fetch(`${BASE_URL}/Attraction/Names?names=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            setNearByMap(prev => ({ ...prev, [fest.id]: data }));
+        } catch (err) {
+            console.error('Failed to fetch nearby attractions:', err);
+        } finally {
+            setNearbyLoading(prev => ({ ...prev, [fest.id]: false }));
+        }
+    };
+
+    const toggle = (fest) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setExpandedCard(prev => prev === id ? null : id);
+        const isOpening = expandedCard !== fest.id;
+        setExpandedCard(prev => prev === fest.id ? null : fest.id);
+        if (isOpening) {
+            fetchNearbyAttractionPlaces(fest);
+        }
     };
 
     const filtered = FESTIVAL_DATA.filter(f => {
@@ -166,34 +204,34 @@ export default function Festivals({ navigation }) {
 
     return (
         <SafeAreaProvider>
-            <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top', 'left', 'right']}>
+            <SafeAreaView className="flex-1 bg-white" edges={['top', 'left', 'right']}>
 
                 {/* Header */}
-                <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-                            <Text style={{ color: '#6D28D9', fontWeight: '700', fontSize: 14 }}>← Back</Text>
+                <View className="bg-white px-5 pt-4 pb-4 border-b border-slate-200">
+                    <View className="flex-row items-center justify-between mb-4">
+                        <TouchableOpacity onPress={() => navigation.goBack()} className="p-1">
+                            <Text className="text-violet-700 font-extrabold text-sm">← Back</Text>
                         </TouchableOpacity>
-                        <View style={{ alignItems: 'center' }}>
-                            <Text style={{ color: '#0F172A', fontWeight: '800', fontSize: 18 }}>Sri Lankan Festivals</Text>
-                            <Text style={{ color: '#94A3B8', fontWeight: '600', fontSize: 10, letterSpacing: 2, marginTop: 1 }}>CULTURAL GUIDE</Text>
+                        <View className="items-center">
+                            <Text className="text-slate-950 font-black text-lg">Sri Lankan Festivals</Text>
+                            <Text className="text-slate-400 font-semibold text-[10px] tracking-[0.2em] mt-1">CULTURAL GUIDE</Text>
                         </View>
-                        <View style={{ width: 48 }} />
+                        <View className="w-12" />
                     </View>
 
                     {/* Search */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1, borderColor: '#E2E8F0' }}>
-                        <Image source={searchIcon} style={{ width: 14, height: 14, marginRight: 10, opacity: 0.4 }} resizeMode="contain" />
+                    <View className="flex-row items-center bg-slate-100 rounded-[14px] px-4 py-3 border border-slate-200">
+                        <Image source={searchIcon} className="w-3.5 h-3.5 mr-2.5 opacity-40" resizeMode="contain" />
                         <TextInput
                             placeholder="Search by name, religion or month…"
                             placeholderTextColor="#CBD5E1"
                             value={searchQuery}
                             onChangeText={setSearchQuery}
-                            style={{ flex: 1, fontSize: 13, color: '#0F172A', fontWeight: '500' }}
+                            className="flex-1 text-[13px] text-slate-900 font-medium"
                         />
                         {searchQuery.length > 0 && (
-                            <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 2 }}>
-                                <Image source={closeIcon} style={{ width: 13, height: 13, opacity: 0.4 }} resizeMode="contain" />
+                            <TouchableOpacity onPress={() => setSearchQuery('')} className="p-1">
+                                <Image source={closeIcon} className="w-3.5 h-3.5 opacity-40" resizeMode="contain" />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -202,14 +240,13 @@ export default function Festivals({ navigation }) {
                 {/* collapsed Cards */}
                 <ScrollView
                     showsVerticalScrollIndicator={false}
-                    style={{ flex: 1, backgroundColor: '#F8FAFC' }}
+                    className="flex-1 bg-slate-50"
                     contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 70 }}
                 >
                     {filtered.length === 0 ? (
-                        <View style={{ alignItems: 'center', paddingVertical: 80 }}>
-                            <Text style={{ fontSize: 36 }}>🎭</Text>
-                            <Text style={{ color: '#64748B', fontWeight: '700', fontSize: 15, marginTop: 12 }}>No festivals found</Text>
-                            <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>Try a different name or month</Text>
+                        <View className="items-center py-20">
+                            <Text className="text-slate-500 font-bold text-[15px] mt-3">No festivals found</Text>
+                            <Text className="text-slate-400 text-[12px] mt-1">Try a different name or month</Text>
                         </View>
                     ) : filtered.map((fest) => {
                         const isExpanded = expandedCard === fest.id;
@@ -219,61 +256,52 @@ export default function Festivals({ navigation }) {
                             <TouchableOpacity
                                 key={fest.id}
                                 activeOpacity={0.97}
-                                onPress={() => toggle(fest.id)}
-                                style={{
-                                    backgroundColor: '#fff',
-                                    borderRadius: 22,
-                                    marginBottom: 16,
-                                    overflow: 'hidden',
-                                    elevation: 2,
-                                    shadowColor: '#64748B',
-                                    shadowOffset: { width: 0, height: 3 },
-                                    shadowOpacity: 0.08,
-                                    shadowRadius: 14,
-                                }}
+                                onPress={() => toggle(fest)}
+                                className="bg-white rounded-[22px] mb-4 overflow-hidden shadow-sm"
+                                style={{ elevation: 2 }}
                             >
                                 {/* Image */}
-                                <View style={{ height: 190, backgroundColor: '#E2E8F0' }}>
-                                    <Image source={{ uri: fest.image }} style={{ width: '100%', height: 190 }} resizeMode="cover" />
+                                <View className="h-48 bg-slate-200">
+                                    <Image source={fest.image} className="w-full h-full" resizeMode="cover" />
                                     {/* Month*/}
-                                    <View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: 'rgba(15,23,42,0.65)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 }}>
-                                        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11 }}>{fest.month}</Text>
+                                    <View className="absolute top-3.5 left-3.5 bg-slate-950/65 px-3 py-1 rounded-full">
+                                        <Text className="text-white font-bold text-[11px]">{fest.month}</Text>
                                     </View>
                                     {/* Duration*/}
-                                    <View style={{ position: 'absolute', top: 14, right: 14, backgroundColor: 'rgba(15,23,42,0.65)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 }}>
-                                        <Text style={{ color: '#FCD34D', fontWeight: '700', fontSize: 11 }}>{fest.duration}</Text>
+                                    <View className="absolute top-3.5 right-3.5 bg-slate-950/65 px-3 py-1 rounded-full">
+                                        <Text className="text-amber-300 font-bold text-[11px]">{fest.duration}</Text>
                                     </View>
                                 </View>
 
                                 {/* collapsed Card Body */}
-                                <View style={{ padding: 18, paddingTop: 16 }}>
+                                <View className="px-5 pt-4 pb-5">
 
                                     {/* Title */}
-                                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
-                                        <Text style={{ fontSize: 18, fontWeight: '800', color: '#0F172A', flex: 1, marginRight: 12, lineHeight: 24 }}>{fest.name}</Text>
-                                        <View style={{ backgroundColor: badge.bg, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, flexShrink: 0, marginTop: 2 }}>
-                                            <Text style={{ color: badge.text, fontWeight: '700', fontSize: 12 }}>{fest.religion}</Text>
+                                    <View className="flex-row items-start justify-between mb-1.5">
+                                        <Text className="text-slate-950 font-extrabold text-[18px] leading-6 flex-1 mr-3" numberOfLines={2}>{fest.name}</Text>
+                                        <View className="rounded-full px-3 py-1.5 flex-shrink-0 mt-0.5" style={{ backgroundColor: badge.bg }}>
+                                            <Text className="font-bold text-[12px]" style={{ color: badge.text }}>{fest.religion}</Text>
                                         </View>
                                     </View>
 
                                     {/* Rating */}
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                                        <Image source={star} style={{ width: 14, height: 14 }} resizeMode="contain" />
-                                        <Text style={{ color: '#0F172A', fontWeight: '700', fontSize: 13, marginLeft: 4 }}>{fest.score.toFixed(1)}</Text>
-                                        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', marginHorizontal: 8 }} />
-                                        <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '500', flex: 1 }} numberOfLines={1}>{fest.location}</Text>
+                                    <View className="flex-row items-center mb-2.5">
+                                        <Image source={star} className="w-3.5 h-3.5" resizeMode="contain" />
+                                        <Text className="text-slate-950 font-bold text-[13px] ml-1">{fest.score.toFixed(1)}</Text>
+                                        <View className="w-1 h-1 rounded-full bg-slate-200 mx-2" />
+                                        <Text className="text-slate-400 text-[12px] font-medium flex-1" numberOfLines={1}>{fest.location}</Text>
                                     </View>
 
                                     {/* Description */}
-                                    <Text style={{ color: '#64748B', fontSize: 13, lineHeight: 20, fontWeight: '400', marginBottom: 14 }} numberOfLines={isExpanded ? undefined : 2}>{fest.desc}</Text>
+                                    <Text className="text-slate-500 text-[13px] leading-5 font-normal mb-3.5" numberOfLines={isExpanded ? undefined : 2}>{fest.desc}</Text>
 
                                     {/* Expanded Details */}
                                     {isExpanded && (
                                         <View>
-                                            <View style={{ height: 1, backgroundColor: '#F1F5F9', marginBottom: 16 }} />
+                                            <View className="h-px bg-slate-200 mb-4" />
 
                                             {/* Info Grid */}
-                                            <View style={{ marginBottom: 6 }}>
+                                            <View className="mb-1.5">
                                                 <InfoGrid
                                                     items={[
                                                         { label: 'Dates', value: `${fest.start} – ${fest.end}` },
@@ -286,7 +314,7 @@ export default function Festivals({ navigation }) {
                                                 />
                                             </View>
 
-                                            <View style={{ height: 1, backgroundColor: '#F1F5F9', marginVertical: 16 }} />
+                                            <View className="h-px bg-slate-200 my-4" />
 
                                             {/* Icon detail */}
                                             <DetailRow icon={tshirtIcon} label="Dress Code" value={fest.dress_code} />
@@ -294,25 +322,50 @@ export default function Festivals({ navigation }) {
                                             <DetailRow icon={tipsIcon} label="Travel Tip" value={fest.tips} />
                                             <DetailRow icon={cuisineIcon} label="Cuisine" value={fest.cuisine} />
 
-                                            <View style={{ height: 1, backgroundColor: '#F1F5F9', marginVertical: 16 }} />
+                                            <View className="h-px bg-slate-200 my-4" />
 
-                                            {/* Nearby attractions */}
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                                                <Image source={linkIcon} style={{ width: 14, height: 14, marginRight: 8 }} resizeMode="contain" />
-                                                <Text style={{ color: '#0F172A', fontWeight: '700', fontSize: 13 }}>Nearby Attractions</Text>
-                                            </View>
-                                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4 }}>
-                                                {fest.attractions.map((a, i) => (
-                                                    <View key={i} style={{ backgroundColor: '#F5F0FF', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, marginRight: 7, marginBottom: 7 }}>
-                                                        <Text style={{ color: '#6D28D9', fontWeight: '700', fontSize: 12 }}>{a}</Text>
-                                                    </View>
-                                                ))}
+                                            <View>
+                                             <View className="flex-row items-center mb-2.5">
+                                                 <Image source={locationIcon} className="w-3.5 h-3.5 mr-2" resizeMode="contain" />
+                                                 <Text className="text-slate-950 font-bold text-[13px]">Nearby Attraction places</Text>
+                                             </View>
+
+                                             {nearbyLoading[fest.id] ? (
+                                                 <ActivityIndicator size="large" color="#f87171" className="my-6" />
+                                             ) : (
+                                                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                     <View className="flex-row py-3 px-6">
+                                                         {(nearbymap[fest.id] && nearbymap[fest.id].length > 0) ? nearbymap[fest.id].map((attraction, i) => (
+                                                             <View key={i} className="pr-3">
+                                                                 <View className="bg-white h-80 w-64 rounded-xl overflow-hidden relative border border-gray-100">
+                                                                     <Image source={{ uri: proxyImage(attraction.image_url) }} className="w-full h-36" />
+                                                                     <View className="left-0 right-0 top-[50%] bg-white rounded-b-xl bottom-0 absolute">
+                                                                         <Text className="text-black text-l font-bold pt-2">{attraction.attraction_name}</Text>
+                                                                         <View className="flex-row py-2">
+                                                                             <Image source={star} className="h-4 w-4" />
+                                                                             <Text className="text-sm font-medium text-black pl-2">{attraction.rating}</Text>
+                                                                             {attraction.distanceKm != null && (
+                                                                                 <Text className="text-sm font-medium text-gray-400 pl-2">• {attraction.distanceKm} km away</Text>
+                                                                             )}
+                                                                         </View>
+                                                                         <ScrollView style={{ maxHeight: 90 }} showsVerticalScrollIndicator={true}>
+                                                                             <Text className="text-sm font-medium text-gray-400 px-4">{attraction.description}</Text>
+                                                                         </ScrollView>
+                                                                     </View>
+                                                                 </View>
+                                                             </View>
+                                                         )) : (
+                                                             <Text className="text-gray-400 text-sm">No attraction details found.</Text>
+                                                         )}
+                                                     </View>
+                                                 </ScrollView>
+                                             )}
                                             </View>
                                         </View>
                                     )}
 
                                     {!isExpanded && (
-                                        <Text style={{ color: '#CBD5E1', fontSize: 11, fontWeight: '600', marginTop: 2 }}>Tap to see full details</Text>
+                                        <Text className="text-slate-300 text-[11px] font-semibold mt-0.5">Tap to see full details</Text>
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -332,11 +385,11 @@ function InfoGrid({ items }) {
     return (
         <View>
             {rows.map((row, ri) => (
-                <View key={ri} style={{ flexDirection: 'row', marginBottom: 12 }}>
+                <View key={ri} className="flex-row mb-3">
                     {row.map((item, ci) => (
-                        <View key={ci} style={{ flex: 1, paddingRight: ci === 0 ? 16 : 0 }}>
-                            <Text style={{ color: '#94A3B8', fontSize: 11, fontWeight: '600', marginBottom: 2 }}>{item.label}</Text>
-                            <Text style={{ color: '#1E293B', fontSize: 13, fontWeight: '700' }}>{item.value}</Text>
+                        <View key={ci} className={`flex-1 ${ci === 0 ? 'pr-4' : ''}`}>
+                            <Text className="text-slate-400 text-[11px] font-semibold mb-1">{item.label}</Text>
+                            <Text className="text-slate-950 text-[13px] font-bold">{item.value}</Text>
                         </View>
                     ))}
                 </View>
@@ -347,13 +400,13 @@ function InfoGrid({ items }) {
 
 function DetailRow({ icon, label, value }) {
     return (
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 }}>
-            <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor: '#F1F5F9' }}>
+        <View className="flex-row items-start mb-3.5">
+            <View className="w-8 h-8 rounded-[8px] bg-[#F8FAFC] items-center justify-center mr-3 border border-[#F1F5F9]">
                 <Image source={icon} style={{ width: 17, height: 17 }} resizeMode="contain" />
             </View>
-            <View style={{ flex: 1 }}>
-                <Text style={{ color: '#94A3B8', fontSize: 11, fontWeight: '600', marginBottom: 2 }}>{label}</Text>
-                <Text style={{ color: '#1E293B', fontSize: 13, fontWeight: '600', lineHeight: 19 }}>{value}</Text>
+            <View className="flex-1">
+                <Text className="text-[#94A3B8] text-[11px] font-semibold mb-1">{label}</Text>
+                <Text className="text-[#1E293B] text-[13px] font-semibold" style={{ lineHeight: 19 }}>{value}</Text>
             </View>
         </View>
     );

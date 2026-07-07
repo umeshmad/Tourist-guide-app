@@ -12,7 +12,7 @@ const uri = "mongodb+srv://umeshmaduwantha:Passivevoice%4010@cluster0.oymmo9e.mo
 const client = new MongoClient(uri);
 let db;
 
-dns.setServers(["1.1.1.1","8.8.8.8"])
+dns.setServers(["1.1.1.1", "8.8.8.8"])
 
 async function mongodbconnect() {
   try {
@@ -25,16 +25,16 @@ async function mongodbconnect() {
 }
 
 const getdistancekm = (lat1, lng1, lat2, lng2) => {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * (Math.PI / 180);
-      const dLng = (lng2 - lng1) * (Math.PI / 180);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    };
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLng = (lng2 - lng1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
 
 app.get("/search", async (req, res) => {
   try {
@@ -60,11 +60,11 @@ app.get("/Hotels", async (req, res) => {
 
     const filter = query
       ? {
-          $or: [
-            { hotel_name: { $regex: query, $options: "i" } },
-            { nearest_cities: { $regex: query, $options: "i" } },
-          ]
-        }
+        $or: [
+          { hotel_name: { $regex: query, $options: "i" } },
+          { nearest_cities: { $regex: query, $options: "i" } },
+        ]
+      }
       : {}; // if no query, return all
 
     const hotels = await db
@@ -130,46 +130,46 @@ app.get("/Hotels/nearby", async (req, res) => {
   }
 });
 
-app.get("/Attraction/Names",async(req,res)=>{
-  try{
-    const query=req.query.names?.trim();
-    const hotelLat=parseFloat(req.query.hotelLat);
-    const hotelLon=parseFloat(req.query.hotelLon);
-    if(!query) return res.json([]);
+app.get("/Attraction/Names", async (req, res) => {
+  try {
+    const query = req.query.names?.trim();
+    const hotelLat = parseFloat(req.query.hotelLat);
+    const hotelLon = parseFloat(req.query.hotelLon);
+    if (!query) return res.json([]);
 
-    const names=query.split(",").map((n)=>n.trim());
-    const attraction=await db.collection('Attraction_places')
-    .find({attraction_name:{$in:names}})
-    .toArray();
+    const names = query.split(",").map((n) => n.trim());
+    const attraction = await db.collection('Attraction_places')
+      .find({ attraction_name: { $in: names } })
+      .toArray();
 
-    const result=attraction.map((places)=>({
+    const result = attraction.map((places) => ({
       ...places,
-      distanceKm:(hotelLat&&hotelLon&&places.latitude&&places.longitude)
-      ?(getdistancekm(hotelLat, hotelLon, places.latitude, places.longitude).toFixed(2))
-      :null 
+      distanceKm: (hotelLat && hotelLon && places.latitude && places.longitude)
+        ? (getdistancekm(hotelLat, hotelLon, places.latitude, places.longitude).toFixed(2))
+        : null
     }));
     res.json(result)
   }
-  catch(err){
-    res.status(500).json({error:"Something went wrong"})
+  catch (err) {
+    res.status(500).json({ error: "Something went wrong" })
   }
 });
 
 app.get("/Attraction", async (req, res) => {
   try {
     const query = req.query.q?.trim();
-    const category=req.query.category;
+    const category = req.query.category;
 
     const filter = query
       ? {
-          $or: [
-            { attraction_name: { $regex: query, $options: "i" } },
-            { city: { $regex: query, $options: "i" } },
-          ]
-        }
+        $or: [
+          { attraction_name: { $regex: query, $options: "i" } },
+          { city: { $regex: query, $options: "i" } },
+        ]
+      }
       : {};
-    if(category && category!=="All"){
-      filter.category=category;
+    if (category && category !== "All") {
+      filter.category = category;
     }
 
     const attraction = await db
@@ -183,87 +183,89 @@ app.get("/Attraction", async (req, res) => {
   }
 });
 
-app.get("/Resturants", async(req,res)=>{
-  try{
-    const query=req.query.q?.trim();
-    const category=req.query.category;
-    
-    const filter={};
+app.get("/Resturants", async (req, res) => {
+  try {
+    const query = req.query.q?.trim();
+    const category = req.query.category;
 
-    if(query){
-      filter.$or=[
-        {restaurant_name:{$regex:query,$options:"i"}},
-        {amenity_type:{$regex:query,$options:"i"}},
-        {city:{$regex:query,$options:"i"}},
-        {nearby_attractions:{$regex:query,$options:"i"}},
+    const filter = {};
+
+    if (query) {
+      filter.$or = [
+        { restaurant_name: { $regex: query, $options: "i" } },
+        { amenity_type: { $regex: query, $options: "i" } },
+        { city: { $regex: query, $options: "i" } },
+        { nearby_attractions: { $regex: query, $options: "i" } },
       ];
     }
 
-    if(category && category!=="ALL"){
-      filter.cuisine_type={ $regex: `^${category}$`, $options: "i" };
+    if (category && category !== "ALL") {
+      filter.cuisine_type = { $regex: `^${category}$`, $options: "i" };
     }
 
-    const Restaurants=await db
-    .collection("Resturants")
-    .find(filter)
-    .toArray()
+    const Restaurants = await db
+      .collection("Resturants")
+      .find(filter)
+      .toArray()
 
     res.json(Restaurants);
-  }catch(err){
-    res.status(500).json({error:"Something went wrong"})
-  }   
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" })
+  }
 });
 
-app.post("/log/click",async(req,res)=>{
-  try{
-    const {attraction_name, attraction_id}=req.body;
+app.post("/log/click", async (req, res) => {
+  try {
+    const { attraction_name, attraction_id } = req.body;
     await db.collection("search_logs").insertOne({
       attraction_id: attraction_id,
       attraction_name,
       timeStamp: new Date()
     });
-    res.json({success:true})
-  }catch(err){
-    res.status(500).json({error:"Something went wrong"});
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
 
-app.get("/popular",async(req,res)=>{
-  try{
-    const top=await db.collection("search_logs").aggregate([
+app.get("/popular", async (req, res) => {
+  try {
+    const top = await db.collection("search_logs").aggregate([
       { $match: { attraction_id: { $exists: true, $ne: null, $regex: "^[0-9a-fA-F]{24}$" } } },
-      { $group:{_id:"$attraction_id",attraction_name:{$first:"$attraction_name"},count:{$sum:1}}},
-      { $sort:{count:-1}},
-      { $limit:10},
+      { $group: { _id: "$attraction_id", attraction_name: { $first: "$attraction_name" }, count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
       { $addFields: { attraction_obj_id: { $toObjectId: "$_id" } } },
-      { $lookup: {
-        from: "Attraction_places",
-        localField: "attraction_obj_id",
-        foreignField: "_id",
-        as: "details"
-      }},
+      {
+        $lookup: {
+          from: "Attraction_places",
+          localField: "attraction_obj_id",
+          foreignField: "_id",
+          as: "details"
+        }
+      },
       { $unwind: "$details" },
       { $replaceRoot: { newRoot: { $mergeObjects: ["$details", { count: "$count" }] } } }
     ]).toArray();
 
     res.json(top);
-  }catch(err){
-    res.status(500).json({error:"Something went wrong"})
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" })
   }
 });
 
-app.get("/weather",async(req,res)=>{
-  try{
+app.get("/weather", async (req, res) => {
+  try {
     const lat = req.query.lat;
     const lon = req.query.lon;
 
-    const responce=await fetch(
+    const responce = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,wind_speed_10m`
     );
-    const data=await responce.json();
+    const data = await responce.json();
     res.json(data.current);
-  }catch(err){
-    res.status(500).json({error:"Weather fetch failed"});
+  } catch (err) {
+    res.status(500).json({ error: "Weather fetch failed" });
   }
 })
 
@@ -313,7 +315,99 @@ app.get("/weather/alert", async (req, res) => {
   }
 });
 
+app.post("/auth/register", async (req, res) => {
+  try {
+    const { email, password, name, phone, emergencyContact } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: "All fields are required" })
+    }
+    const existing = await db.collection("Users").findOne({ email });
+    if (existing) {
+      return res.status(409).json({ error: "Email already registered" })
+    }
+    await db.collection("Users").insertOne({
+      name,
+      email,
+      password,
+      phone,
+      emergencyContact,
+      createdAt: new Date()
+    });
+    res.json({ success: true, message: "Registered successfully" })
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
 
+app.post("/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" })
+    }
+    const user = await db.collection("Users").findOne({ email, password });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" })
+    }
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    })
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Login failed" });
+  }
+})
+app.post("/auth/preferances", async (req, res) => {
+  try {
+    const { email, preferences } = req.body;
+    if (!email || !preferences) {
+      return res.status(400).json({ error: "Missing data" });
+    }
+    const result = await db.collection("Users").updateOne(
+      { email: email },
+      { $set: { preferences: preferences } },
+      { upsert: false }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "User not found. Please register first." });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Preferences error:", err);
+    res.status(500).json({ error: "Failed to save preferences" });
+  }
+});
+
+app.get("/auth/user", async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    const user = await db.collection("Users").findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        emergencyContact: user.emergencyContact
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
 
 async function createServer() {
   await mongodbconnect();

@@ -26,12 +26,14 @@ export default function Resturants() {
 
     const addToTasks = async (resturant) => {
         try {
-            const saved = await AsyncStorage.getItem('tasks');
+            const dayID = Route.params?.dayID || 1;
+            const storageKey = `task_day_${dayID}`;
+            const saved = await AsyncStorage.getItem(storageKey);
             const tasks = saved ? JSON.parse(saved) : [];
             const exists = tasks.some(t => t.restaurant_name === resturant.restaurant_name);
             if (!exists) {
                 tasks.push(resturant);
-                await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+                await AsyncStorage.setItem(storageKey, JSON.stringify(tasks));
             }
             navigation.replace('Tour Planing');
         } catch (err) {

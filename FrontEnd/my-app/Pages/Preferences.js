@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import '../global.css';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import BASE_URL from '../config';
 
 export default function Preferences({ route, navigation }) {
     const { registrationData = {} } = route.params || {};
@@ -48,7 +49,7 @@ export default function Preferences({ route, navigation }) {
     const dietaryOptions = [
         { id: 'none', label: 'All Cuisines', description: 'No restrictions, eager to try local foods' },
         { id: 'veg', label: 'Vegetarian / Vegan', description: 'Plant-based options and clean green cafes' },
-        { id: 'halal', label: 'Halal Certified', description: 'Halal friendly restaurants and food spots' },
+        { id: 'local', label: 'Local & Street Food', description: 'Authentic street eats, hoppers, kottu & local bites' },
         { id: 'seafood', label: 'Seafood Fanatic', description: 'Ocean fresh fish, prawns, and coastal dishes' },
     ];
 
@@ -99,7 +100,7 @@ export default function Preferences({ route, navigation }) {
         }
     };
 
-    const handleFinish = () => {
+    const handleFinish = async () => {
         const completeProfile = {
             ...registrationData,
             preferences: {
@@ -112,7 +113,24 @@ export default function Preferences({ route, navigation }) {
             }
         };
 
-        navigation.navigate("Home");
+        try{
+            const response=await fetch(`${BASE_URL}/auth/preferances`,{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({
+                    email:registrationData.email,
+                    preferences:completeProfile.preferences
+                })
+            });
+            const data=await response.json();
+            if(!response.ok){
+                Alert.alert("Error", data.error);
+                return;
+            }
+            navigation.navigate("Home");
+        }catch(err){
+            Alert.alert("Error", "Could not save preferences");
+        }
     };
 
     const getStepDetails = () => {

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import '../global.css';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView ,Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import user from '../assets/user.png';
 import alarm from '../assets/alarm.png';
+import BASE_URL from '../config';
 
 export default function Register({ navigation }) {
     const [name, setName] = useState('');
@@ -13,8 +14,9 @@ export default function Register({ navigation }) {
     const [emergencyName, setEmergencyName] = useState('');
     const [emergencyPhone, setEmergencyPhone] = useState('');
     const [emergencyRelation, setEmergencyRelation] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (!name || !email || !password || !phone) {
             Alert.alert("Missing Information", "Please fill in all personal details.");
             return;
@@ -36,7 +38,24 @@ export default function Register({ navigation }) {
             }
         };
 
-        navigation.navigate("Preferences", { registrationData });
+        try {
+            setLoading(true);
+            const response = await fetch(`${BASE_URL}/auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(registrationData)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                Alert.alert("Registration Failed", data.error || "Something went wrong");
+                return;
+            }
+            navigation.navigate("Preferences", { registrationData });
+        } catch (err) {
+            Alert.alert("Error", "Could not connect to server. Check your connection.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -44,7 +63,7 @@ export default function Register({ navigation }) {
             <SafeAreaView className="flex-1 bg-white" edges={['top', 'left', 'right']}>
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                     <View className="px-5 py-6">
-                        
+
                         {/* Header */}
                         <View className="mb-6">
                             <Text className="text-2xl font-bold text-gray-900">Create Account</Text>
@@ -152,10 +171,14 @@ export default function Register({ navigation }) {
                         {/* Next Button */}
                         <TouchableOpacity
                             onPress={handleNext}
-                            className="bg-blue-600 rounded-2xl py-4 items-center mb-6"
+                            disabled={loading}
+                            className={`rounded-2xl py-4 items-center mb-6 ${loading ? 'bg-blue-300' : 'bg-blue-600'}`}
                             style={{ elevation: 2 }}
                         >
-                            <Text className="text-white text-base font-bold">Continue to Preferences</Text>
+                            {loading
+                                ? <ActivityIndicator color="#fff" />
+                                : <Text className="text-white text-base font-bold">Continue to Preferences</Text>
+                            }
                         </TouchableOpacity>
 
                         {/* Already have account */}

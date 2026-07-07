@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Image, Text, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import logo from '../assets/search.png';
 import Sleep from '../assets/sleep.png';
@@ -21,6 +21,8 @@ import Resturants from './Resturants';
 
 export default function Search() {
     const navigation = useNavigation();
+    const route = useRoute();
+    const dayID = route.params?.dayID;
     const [search, setsearch] = useState();
     const [searchResults, setSearchResults] = useState([]);
     const [userLocation, setUserLocation] = useState(null);
@@ -58,7 +60,7 @@ export default function Search() {
             const res = await fetch(`${BASE_URL}/Hotels/nearby?longitude=${longitude}&latitude=${latitude}`);
             const data = await res.json();
 
-            navigation.navigate("Hotels", { hotels: data })
+            navigation.navigate("Hotels", { hotels: data, dayID })
         } catch (err) {
             console.error(err);
         } finally {
@@ -85,7 +87,7 @@ export default function Search() {
         try {
             const italian = await fetch(`${BASE_URL}/Resturants?category=Italian`)
             const data = await italian.json();
-            navigation.navigate("Resturants", { resturant: data, filterLabel: "Italian" })
+            navigation.navigate("Resturants", { resturant: data, filterLabel: "Italian", dayID })
         } catch (err) {
             console.error(err);
         }
@@ -131,21 +133,21 @@ export default function Search() {
 
                     {/* Category Buttons */}
                     <View className="flex-row px-5 pt-2 pb-3">
-                        <TouchableOpacity className="flex-1 mr-2" onPress={() => navigation.navigate("Hotels")}>
+                        <TouchableOpacity className="flex-1 mr-2" onPress={() => navigation.navigate("Hotels", { dayID })}>
                             <View className="bg-blue-50 h-16 rounded-2xl justify-center items-center flex-row border border-blue-100">
                                 <Image source={Sleep} className="h-7 w-7" />
                                 <Text className="text-blue-600 text-sm font-bold pl-2">Hotels</Text>
                             </View>
                         </TouchableOpacity>
 
-                        <TouchableOpacity className="flex-1 mx-1" onPress={() => navigation.navigate("Resturants")}>
+                        <TouchableOpacity className="flex-1 mx-1" onPress={() => navigation.navigate("Resturants", { dayID })}>
                             <View className="bg-emerald-50 h-16 rounded-2xl justify-center items-center flex-row border border-emerald-100">
                                 <Image source={rest} className="h-7 w-7" />
                                 <Text className="text-emerald-600 text-sm font-bold pl-2">Foods</Text>
                             </View>
                         </TouchableOpacity>
 
-                        <TouchableOpacity className="flex-1 ml-2" onPress={() => navigation.navigate("Attraction")}>
+                        <TouchableOpacity className="flex-1 ml-2" onPress={() => navigation.navigate("Attraction", { dayID })}>
                             <View className="bg-rose-50 h-16 rounded-2xl justify-center items-center flex-row border border-rose-100">
                                 <Image source={Locationping} className="h-6 w-6" />
                                 <Text className="text-rose-500 text-sm font-bold pl-2">Places</Text>
@@ -164,7 +166,7 @@ export default function Search() {
                                 <TouchableOpacity
                                     key={index}
                                     onPress={() => {
-                                        navigation.navigate("Attraction", { place });
+                                        navigation.navigate("Attraction", { place, dayID });
                                     }}
                                     className="rounded-2xl overflow-hidden mr-3 relative w-44"
                                     style={{ elevation: 4 }}>
@@ -223,7 +225,7 @@ export default function Search() {
                             </View>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => navigation.navigate("PhotoSpots")}>
+                        <TouchableOpacity onPress={() => navigation.navigate("PhotoSpots", { dayID })}>
                             <View className="h-14 bg-white border border-gray-100 rounded-2xl flex-row items-center px-3 mb-3"
                                 style={{ elevation: 2 }}>
                                 <View className="bg-violet-50 rounded-xl w-10 h-10 justify-center items-center">

@@ -14,6 +14,10 @@ import lantern from '../assets/lantern.png';
 import star from '../assets/star.png';
 import arrowRightIcon from '../assets/arrow_right.png';
 import closeIcon from '../assets/close.png';
+import KandyEsalaPerahera from '../assets/KandyEsalaPerahera.jpg';
+import VesakFestival from '../assets/VesakFestival.jpg';
+import SinhalaTamilNewYear from '../assets/SinhalaTamilNewYear.jpg';
+import KatharagamaFestival from '../assets/KatharagamaFestival.jpg';
 const RECOMMENDED = [
     {
         name: "Browns Beach",
@@ -58,7 +62,7 @@ const FESTIVALS = [
         score: "4.9",
         desc: "One of Asia's grandest pageants — ornate elephants, fire dancers, and drummers parade through Kandy's historic streets for 10 spectacular nights.",
         location: "Kandy, Central Province",
-        image: "https://images.unsplash.com/photo-1546708973-b339540b5162?w=600&auto=format&fit=crop&q=80",
+        image: KandyEsalaPerahera,
     },
     {
         title: "Vesak Poya Festival",
@@ -69,8 +73,7 @@ const FESTIVALS = [
         score: "4.8",
         desc: "The entire island glows with handmade lanterns, illuminated pandols, and free food stalls celebrating the birth and enlightenment of the Buddha.",
         location: "Islandwide — Best in Colombo",
-        image: "https://images.unsplash.com/photo-1528127269322-539801943592?w=600&auto=format&fit=crop&q=80",
-    },
+        image: VesakFestival,    },
     {
         title: "Sinhala & Tamil New Year",
         badge: "Cultural",
@@ -80,7 +83,7 @@ const FESTIVALS = [
         score: "4.6",
         desc: "A vibrant harvest celebration with traditional games, oil lamp rituals, and an abundance of homemade sweets shared between families across Sri Lanka.",
         location: "Islandwide — Cultural homes",
-        image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80",
+        image: SinhalaTamilNewYear,
     },
     {
         title: "Kataragama Festival",
@@ -91,7 +94,7 @@ const FESTIVALS = [
         score: "4.7",
         desc: "A rare multi-faith gathering where Buddhist, Hindu, Muslim, and Vedda pilgrims unite — culminating in fire-walking and a dramatic water-cutting ceremony.",
         location: "Kataragama, Hambantota",
-        image: "https://images.unsplash.com/photo-1590076275577-c1c992f7b3cc?w=600&auto=format&fit=crop&q=80",
+        image: KatharagamaFestival,
     },
 ];
 
@@ -226,7 +229,7 @@ export default function Explore() {
                                 >
                                     {/* Festival Image */}
                                     <View style={{ height: 140, backgroundColor: '#E2E8F0' }}>
-                                        <Image source={{ uri: fest.image }} style={{ width: '100%', height: 140 }} resizeMode="cover" />
+                                        <Image source={fest.image} style={{ width: '100%', height: 140 }} resizeMode="cover" />
 
                                         <View style={{ position: 'absolute', top: 11, left: 11, backgroundColor: 'rgba(15,23,42,0.62)', paddingHorizontal: 11, paddingVertical: 4, borderRadius: 18 }}>
                                             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11 }}>{fest.date}</Text>
