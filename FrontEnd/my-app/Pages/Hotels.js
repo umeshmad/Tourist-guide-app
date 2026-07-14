@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, Image, View, ScrollView, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { Text, Image, View, ScrollView, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import logo from '../assets/search.png';
@@ -47,6 +47,13 @@ const fetaturesIcon = {
     "Heritage Property": cultural,
 };
 
+const Hotel_SLots=[
+    {key:'All Day', label:'All-Day'},
+    {key:'Breakfast', label:'breakfast'},
+    {key:'Lunch',label:'lunch'},
+    {key:'Dinner',label:'Dinner'}
+]
+
 export default function Hotel() {
     const [selected, setSelected] = useState(1);
     const Route = useRoute();
@@ -59,6 +66,9 @@ export default function Hotel() {
     const [originalHotels, setOriginalHotels] = useState([]);
     const navigation = useNavigation();
     const singleHotel = Route.params?.hotel;
+    const [slotModelFor,setSlotModelFor]=useState(null);
+    const [selectedSlot, setSelectedSlot]=useState({});
+    const getSlot=(index)=>selectedSlot[index]||'All Day'
 
     useEffect(() => {
         const hotelParam = Route.params?.hotel || Route.params?.hotels;
@@ -150,7 +160,7 @@ export default function Hotel() {
 
             const hotelExists = tasks.some(t => t.hotel_name === hotel.hotel_name);
             if (!hotelExists) {
-                tasks.push(hotel);
+                tasks.push({...hotel, slot: getSlot(index)});
             }
             const attractions = nearbymap[index] || [];
             attractions.forEach(attr => {
@@ -166,6 +176,15 @@ export default function Hotel() {
             console.error('Failed to save hotel and attractions:', err);
         }
     };
+
+    const openSlotPicker=(hotel,index)=>setSlotModelFor({hotel,index});
+
+    const confermSlot=(slotKey)=>{
+        const {hotel,index}=slotModelFor;
+        setSelectedSlot(prev=>({...prev,[index]:slotKey}))
+        setSlotModelFor(null);
+        addHotel({...hotel, slot:slotKey});
+    }
 
     return (
         <SafeAreaProvider>
@@ -279,7 +298,7 @@ export default function Hotel() {
                                                     </View>
                                                 </View>
                                                 <TouchableOpacity
-                                                    onPress={() => addHotel(hotel)}
+                                                    onPress={() => openSlotPicker(hotel,index)}
                                                     className="bg-red-400 rounded-xl px-4 py-2"
                                                 >
                                                     <Text className="text-white text-xs font-bold">+ Add</Text>
@@ -340,7 +359,7 @@ export default function Hotel() {
                                             </View>
 
                                             <View className="flex items-end px-3">
-                                                <TouchableOpacity onPress={() => addHotel(hotel)} className="bg-red-400 rounded-3xl translate-y-2 border border-gray-100 h-12 w-32 flex justify-center items-center">
+                                                <TouchableOpacity onPress={() => openSlotPicker(hotel,index)} className="bg-red-400 rounded-3xl translate-y-2 border border-gray-100 h-12 w-32 flex justify-center items-center">
                                                     <Text className="text-xl font-bold text-white">Select</Text>
                                                 </TouchableOpacity>
                                             </View>
@@ -394,6 +413,23 @@ export default function Hotel() {
                 )}
 
             </SafeAreaView>
+            <Modal visible={!!slotModelFor} transparent animationType='fade' onRequestClose={()=>setSlotModelFor(null)}>
+                <View className="flex-1 bg-black/40 justify-center items-center">
+                    <View className="bg-white rounded-2xl p-5 w-72">
+                        <Text className="text-gray-900 font-bold text-base mb-3">When is this for?</Text>
+                        {Hotel_SLots.map((s)=>(
+                            <TouchableOpacity key={s.key} onPress={() => confermSlot(s.key)} className="flex-row items-center py-2.5">
+                                <View className="w-5 h-5 rounded-full border-2 border-red-400 mr-3" />
+                                <Text className="text-gray-700 text-sm">{s.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity onPress={() => setSlotModelFor(null)} className="mt-2">
+                            <Text className="text-gray-400 text-xs text-center">Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaProvider>
+        
     );
 }

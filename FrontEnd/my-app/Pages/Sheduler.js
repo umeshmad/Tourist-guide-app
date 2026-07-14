@@ -26,7 +26,7 @@ const TravelConnector = React.memo(({ timeBefore }) => (
 const callNumber=(rawnumber)=>{
     if(!rawnumber)
         return
-    // Extract number from formats like "Police: 119" or just "119"
+    // Extract number
     const numberMatch = rawnumber.match(/(\d+)/);
     const number = numberMatch ? numberMatch[0] : rawnumber.replace(/[^\d+]/g, '');
     if(!number) return;
@@ -45,12 +45,28 @@ const callNumber=(rawnumber)=>{
         console.error('[Call] failed to open dialer:', err);
     });
 }
+const SLOT_META = {
+    'All Day': { label: 'All Day', order: 0, color: 'bg-purple-200' },
+    'BreakFast': { label: 'Breakfast', order: 1, color: 'bg-yellow-200' },
+    'Lunch': { label: 'Lunch', order: 2, color: 'bg-orange-200' },
+    'Dinner': { label: 'Dinner', order: 3, color: 'bg-indigo-200' }
+};
+
+const SLOT_ORDER = ['All Day', 'BreakFast', 'Lunch', 'Dinner'];
+
+const getMissig = (dayId) => {
+    const stops = task[dayId] || [];
+    const filled = new Set(stops.map(s => s.slot).filter(Boolean));
+    return SLOT_ORDER.filter(m => !filled.has(m));
+}
+
 
 
 const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
     const [showEmergency, setShowEmergency] = useState(false);
     const placeEmergency = t.emergency || null;
     const hasEmergency = !!(placeEmergency || userEmergency);
+
 
     return (
         <View>
@@ -65,6 +81,7 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
                         </View>
                         <View className="flex-1">
                             <Text className="text-gray-900 font-bold text-sm" numberOfLines={1}>
+                                {t.slot && SLOT_META[t.slot] ? `${SLOT_META[t.slot].label} ` : ''}
                                 {t.attraction_name || t.hotel_name || t.restaurant_name}
                             </Text>
                             <Text className="text-gray-400 text-xs" numberOfLines={1}>
@@ -101,11 +118,14 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
                         {placeEmergency ? (
                             <View className="mb-2">
                                 <Text className="text-red-600 text-xs font-bold mb-1">Place Emergency Numbers</Text>
-                                {placeEmergency.split(';').map((line, i) => (
-                                    <TouchableOpacity key={i} onPress={() => callNumber(line.trim())}>
-                                        <Text className="text-blue-600 text-xs leading-tight underline">{line.trim()}</Text>
-                                    </TouchableOpacity>
-                                ))}
+                                {placeEmergency.split(/[;,|]/).map((line, i) => {
+                                    const trimmed = line.trim();
+                                    return trimmed ? (
+                                        <TouchableOpacity key={i} onPress={() => callNumber(trimmed)}>
+                                            <Text className="text-blue-600 text-xs leading-tight underline">{trimmed}</Text>
+                                        </TouchableOpacity>
+                                    ) : null;
+                                })}
                             </View>
                         ) : null}
 
@@ -116,7 +136,9 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
                                     <Text className="text-gray-700 text-xs leading-snug">• Name: <Text className="font-bold">{userEmergency.name}</Text></Text>
                                 ) : null}
                                 {userEmergency.phone ? (
-                                    <Text className="text-gray-700 text-xs leading-snug">• Phone: <Text className="font-bold text-red-600">{userEmergency.phone}</Text></Text>
+                                    <TouchableOpacity onPress={() => callNumber(userEmergency.phone)}>
+                                        <Text className="text-gray-700 text-xs leading-snug">• Phone: <Text className="font-bold text-red-600">{userEmergency.phone}</Text></Text>
+                                    </TouchableOpacity>
                                 ) : null}
                                 {userEmergency.relationship ? (
                                     <Text className="text-gray-500 text-xs leading-snug">• Relationship: {userEmergency.relationship}</Text>
@@ -137,10 +159,10 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
 export default function TourPlaning() {
     const navigation = useNavigation();
     const [task, setTask] = useState({});
-    const [travelTimes, setTravelTimes] = useState({}); // { [dayId]: ['~12 min drive', ...] }
-    const [optimizing, setOptimizing] = useState({}); // { [dayId]: true/false }
+    const [travelTimes, setTravelTimes] = useState({}); 
+    const [optimizing, setOptimizing] = useState({}); 
     const [userEmergency, setUserEmergency] = useState(null);
-    const [showDayEmergency, setShowDayEmergency] = useState({}); // { [dayId]: true/false }
+    const [showDayEmergency, setShowDayEmergency] = useState({}); 
 
 
     const loadAllTask = async () => {
@@ -162,19 +184,12 @@ export default function TourPlaning() {
     const fetchUserEmergency = async () => {
         try {
             let email = await AsyncStorage.getItem('userEmail');
-            console.log('[Emergency] email from storage:', email);
-            // fallback: use default test email if not stored yet
             if (!email) email = 'umesh1234@gmail.com';
             const url = `${BASE_URL}/auth/user?email=${encodeURIComponent(email)}`;
-            console.log('[Emergency] fetching:', url);
             const res = await fetch(url);
             const data = await res.json();
-            console.log('[Emergency] response:', JSON.stringify(data));
             if (data.success && data.user?.emergencyContact) {
                 setUserEmergency(data.user.emergencyContact);
-                console.log('[Emergency] contact set:', JSON.stringify(data.user.emergencyContact));
-            } else {
-                console.log('[Emergency] no emergencyContact in response');
             }
         } catch (err) {
             console.error('[Emergency] fetch failed:', err);
@@ -224,11 +239,22 @@ export default function TourPlaning() {
     }
     const [date, setDate] = useState([{ id: 1, dateStr: formatDate(new Date()) }]);
     const addDay = () => {
-        setDate(prev => {
-            const newDay = { id: prev.length + 1, dateStr: formatDate(new Date()) };
-            setTask(p => ({ ...p, [newDay.id]: [] }));
-            return [...prev, newDay];
-        });
+        const lastDay=date[date.length-1];
+        const missing=lastDay ? getMissig(lastDay.id):[];
+        if(missing.length>0){
+            Alert.alert(
+                `Day ${lastDay.id} is not complete`,
+                `Missing ${missing.join(',')}.\n\n Add these before starting a new day, or continue anyway?`,
+                [
+                    { text: "Go back & add", style: "cancel" },
+                    { text: "Continue Anyway", onPress: () => setDate(prev=>{
+                        const newDay = { id: prev.length + 1, dateStr: formatDate(new Date()) };
+                        setTask(p => ({ ...p, [newDay.id]: [] }));
+                        return [...prev, newDay];
+                    }) },
+                ]
+            )
+        }
     };
 
     const deleteDay = async (id) => {
@@ -276,26 +302,38 @@ export default function TourPlaning() {
     // Nearest place
 
     const optimez = (stops) => {
-        if (stops.length <= 2) {
-            return stops;
-        }
-        const remaining = [...stops];
-        const ordered = [remaining.splice(0, 1)[0]];
-        while (remaining.length > 0) {
-            const lastIndex = ordered[ordered.length - 1];
-            let bestindex = 0;
-            let bestDestination = Infinity;
-            remaining.forEach((s, i) => {
-                const Destination = getDistanceKm(lastIndex.latitude, lastIndex.longitude,
-                    s.latitude, s.longitude)
-                if (Destination < bestDestination) {
-                    bestDestination = Destination; bestindex = i;
-                }
-            });
+        const groups = {};
+        stops.forEach(s => {
+            const key = s.slot || '__none__';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(s);
+        });
 
-            ordered.push(remaining.splice(bestindex, 1)[0]);
-        }
-        return ordered;
+        // 2. Nearest-neighbor optimize
+        const optimizeGroup = (groupStops) => {
+            if (!groupStops || groupStops.length <= 2) return groupStops || [];
+            const remaining = [...groupStops];
+            const ordered = [remaining.splice(0, 1)[0]];
+            while (remaining.length > 0) {
+                const last = ordered[ordered.length - 1];
+                let bestIndex = 0;
+                let bestDist = Infinity;
+                remaining.forEach((s, i) => {
+                    const d = getDistanceKm(last.latitude, last.longitude, s.latitude, s.longitude);
+                    if (d < bestDist) { bestDist = d; bestIndex = i; }
+                });
+                ordered.push(remaining.splice(bestIndex, 1)[0]);
+            }
+            return ordered;
+        };
+
+        // 3. Reassemble groups fixed meal order
+        const orderedKeys = [
+            ...SLOT_ORDER.filter(k => groups[k]),
+            ...(groups['__none__'] ? ['__none__'] : [])
+        ];
+
+        return orderedKeys.flatMap(key => optimizeGroup(groups[key]));
     };
     //Total Distance
     const totalRouteKm = (stops) => {
@@ -437,7 +475,11 @@ export default function TourPlaning() {
                                                         {userEmergency ? (
                                                             <View>
                                                                 {userEmergency.name ? <Text className="text-gray-700 text-xs leading-snug">• Name: <Text className="font-bold">{userEmergency.name}</Text></Text> : null}
-                                                                {userEmergency.phone ? <Text className="text-gray-700 text-xs leading-snug">• Phone: <Text className="font-bold text-red-600">{userEmergency.phone}</Text></Text> : null}
+                                                                {userEmergency.phone ? (
+                                                                    <TouchableOpacity onPress={() => callNumber(userEmergency.phone)}>
+                                                                        <Text className="text-gray-700 text-xs leading-snug">• Phone: <Text className="font-bold text-red-600">{userEmergency.phone}</Text></Text>
+                                                                    </TouchableOpacity>
+                                                                ) : null}
                                                                 {userEmergency.relationship ? <Text className="text-gray-500 text-xs leading-snug">• Relationship: {userEmergency.relationship}</Text> : null}
                                                             </View>
                                                         ) : (
@@ -452,9 +494,15 @@ export default function TourPlaning() {
                                                             dayTasks.filter(t => t.emergency).map((t, idx) => (
                                                                 <View key={idx} className={`${idx < dayTasks.filter(t => t.emergency).length - 1 ? 'mb-2' : ''}`}>
                                                                     <Text className="text-gray-900 text-xs font-bold">• {t.attraction_name || t.hotel_name || t.restaurant_name}</Text>
-                                                                    {t.emergency.split(';').map((line, i) => (
-                                                                        <Text key={i} className="text-gray-700 text-xs leading-tight pl-3">  - {line.trim()}</Text>
-                                                                    ))}
+                                                                    {t.emergency.split(/[;,|]/).map((line, i) => {
+                                                                        const trimmed = line.trim();
+                                                                        return trimmed ? (
+                                                                            <TouchableOpacity key={i} onPress={() => callNumber(trimmed)}>
+                                                                                <Text className="text-gray-700 text-xs leading-tight pl-3">  - {trimmed}</Text>
+                                                                            </TouchableOpacity>
+                                                                        ) : null;
+                                                                    })}
+
                                                                 </View>
                                                             ))
                                                         ) : (

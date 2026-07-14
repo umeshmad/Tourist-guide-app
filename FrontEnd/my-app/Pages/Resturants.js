@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../global.css';
-import { Image, Text, ScrollView, TextInput, View, TouchableOpacity, FlatList, Linking, Alert } from 'react-native';
+import { Image, Text, ScrollView, TextInput, View, TouchableOpacity, FlatList, Linking, Alert,model } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import logo from '../assets/search.png';
 import star from '../assets/star.png';
@@ -23,6 +23,8 @@ export default function Resturants() {
     const [expand, setExpand] = useState(null);
     const navigation = useNavigation();
     const [nearby, setNearBy] = useState([]);
+    const [slotModelFor,setSlotModelFor]=useState(null);
+    const [selectedSlot, setSelectedSlot]=useState({});
 
     const addToTasks = async (resturant) => {
         try {
@@ -111,6 +113,20 @@ export default function Resturants() {
             console.error(err);
         }
     };
+
+    const Attraction_Slots=[
+        {key:'breakfast',Label:'Breakfast'},
+        {key:'lunch',label:'Lunch'},
+        {key:'dinner',label:'Dinner'}
+    ];
+
+    const openSlotPicker=(resturant,index)=>setSlotModelFor({resturant,index});
+    const confermSlot=(slotKey)=>{
+        const{resturant,index}=slotModelFor;
+        setSelectedSlot(prev=>({...prev,[index]:slotKey}));
+        setSlotModelFor(null);
+        addToTasks({...resturant,slot:slotKey})
+    }
 
     return (
         <SafeAreaProvider>
@@ -318,7 +334,7 @@ export default function Resturants() {
                                             <TouchableOpacity onPress={() => openMap(resturant.google_maps_link)} className="flex-1 border border-orange-500 rounded-3xl py-3 mr-2 justify-center items-center">
                                                 <Text className="text-orange-500 text-l font-bold">Map</Text>
                                             </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => addToTasks(resturant)} className="flex-1 bg-orange-500 rounded-3xl py-3 ml-2 justify-center items-center">
+                                            <TouchableOpacity onPress={() => openSlotPicker(resturant,index)} className="flex-1 bg-orange-500 rounded-3xl py-3 ml-2 justify-center items-center">
                                                 <Text className="text-white text-l font-bold">+ Add to Plan</Text>
                                             </TouchableOpacity>
                                         </View>
@@ -332,6 +348,22 @@ export default function Resturants() {
                 />
 
             </SafeAreaView>
+            <Model visible={!!slotModelFor} transparent animationType='fade' onRequestClose={()=>setSlotModelFor(null)}>
+                <View className="flex-1 bg-black/40 justify-center items-center">
+                    <View className="bg-white rounded-2xl p-5 w-72">
+                        <Text className="text-gray-900 font-bold text-base mb-3">When is this for?</Text>
+                        {Attraction_Slots.map((s)=>(
+                            <TouchableOpacity key={s.key} onPress={() => confermSlot(s.key)} className="flex-row items-center py-2.5">
+                                <View className="w-5 h-5 rounded-full border-2 border-red-400 mr-3" />
+                                <Text className="text-gray-700 text-sm">{s.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                            <TouchableOpacity onPress={() => setSlotModelFor(null)} className="mt-2">
+                                <Text className="text-gray-400 text-xs text-center">Cancel</Text>
+                             </TouchableOpacity>
+                    </View>
+                </View>
+            </Model>
         </SafeAreaProvider>
     );
 }
