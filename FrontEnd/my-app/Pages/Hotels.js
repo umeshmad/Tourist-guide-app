@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Text, Image, View, ScrollView, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
+import { useColorScheme } from 'nativewind';
 import logo from '../assets/search.png';
 import setting from '../assets/settings 1.png';
 import star from '../assets/star.png';
@@ -25,8 +26,7 @@ import '../global.css';
 
 const proxyImage = (rawUrl) => {
     if (!rawUrl) return null;
-    const url = rawUrl.replace(/^"|"$/g, '').trim();
-    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=400`;
+    return rawUrl.replace(/^"|"$/g, '').trim();
 };
 
 const parseAttractionPlaces = (str) => {
@@ -69,6 +69,9 @@ export default function Hotel() {
     const [slotModelFor,setSlotModelFor]=useState(null);
     const [selectedSlot, setSelectedSlot]=useState({});
     const getSlot=(index)=>selectedSlot[index]||'All Day'
+
+    const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
     useEffect(() => {
         const hotelParam = Route.params?.hotel || Route.params?.hotels;
@@ -188,16 +191,16 @@ export default function Hotel() {
 
     return (
         <SafeAreaProvider>
-            <SafeAreaView className="bg-white flex-1" edges={['top', 'right', 'left']}>
+            <SafeAreaView className="bg-white dark:bg-gray-900 flex-1" edges={['top', 'right', 'left']}>
 
                 {/* Search Bar */}
                 <View className="px-4 pt-6 pb-3">
-                    <View className="flex-row items-center bg-gray-100 rounded-2xl py-3 px-4">
-                        <Image source={logo} className="w-5 h-5 opacity-50" />
+                    <View className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-2xl py-3 px-4">
+                        <Image source={logo} className="w-5 h-5 opacity-50" style={isDark ? { tintColor: 'white' } : {}} />
                         <TextInput
                             placeholder="Search hotels..."
-                            placeholderTextColor="#9CA3AF"
-                            className="pl-3 text-[15px] flex-1 text-gray-800"
+                            placeholderTextColor={isDark ? "#9CA3AF" : "#9CA3AF"}
+                            className="pl-3 text-[15px] flex-1 text-gray-800 dark:text-gray-200"
                             value={search}
                             onChangeText={(text) => { setsearch(text); fetchSearchResults(text); }}
                         />
@@ -216,10 +219,10 @@ export default function Hotel() {
                 <View className="flex-row px-4 pb-4 w-full">
                     <TouchableOpacity
                         onPress={() => { setSelected(1); setHotels([...originalHotels]); }}
-                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-full mr-2 border ${selected === 1 ? 'bg-red-400 border-red-400' : 'bg-white border-gray-200'}`}
+                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-full mr-2 border ${selected === 1 ? 'bg-red-400 border-red-400' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}
                     >
-                        <Image source={setting} className="h-4 w-4 mr-1.5" />
-                        <Text className={`text-sm font-bold ${selected === 1 ? 'text-white' : 'text-gray-600'}`}>All Filters</Text>
+                        <Image source={setting} className="h-4 w-4 mr-1.5" style={(isDark && selected !== 1) ? { tintColor: 'white' } : {}} />
+                        <Text className={`text-sm font-bold ${selected === 1 ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>All Filters</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => {
@@ -230,26 +233,26 @@ export default function Hotel() {
                                 return v1 - v2;
                             }));
                         }}
-                        className={`flex-1 items-center justify-center py-2.5 rounded-full mr-2 border ${selected === 2 ? 'bg-red-400 border-red-400' : 'bg-white border-gray-200'}`}
+                        className={`flex-1 items-center justify-center py-2.5 rounded-full mr-2 border ${selected === 2 ? 'bg-red-400 border-red-400' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}
                     >
-                        <Text className={`text-sm font-bold ${selected === 2 ? 'text-white' : 'text-gray-600'}`}>Pricing</Text>
+                        <Text className={`text-sm font-bold ${selected === 2 ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>Pricing</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => {
                             setSelected(3);
                             setHotels(ratings => [...ratings].sort((b, c) => parseFloat(c.star_rating) - parseFloat(b.star_rating)));
                         }}
-                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-full border ${selected === 3 ? 'bg-red-400 border-red-400' : 'bg-white border-gray-200'}`}
+                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-full border ${selected === 3 ? 'bg-red-400 border-red-400' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}
                     >
                         <Image source={star} className="h-3.5 w-3.5 mr-1.5" />
-                        <Text className={`text-sm font-bold ${selected === 3 ? 'text-white' : 'text-gray-600'}`}>Ratings</Text>
+                        <Text className={`text-sm font-bold ${selected === 3 ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>Ratings</Text>
                     </TouchableOpacity>
                 </View>
 
                 {/* Section Title */}
                 {hotels.length > 0 && (
                     <View className="px-4 pb-3">
-                        <Text className="text-gray-900 font-extrabold text-xl">Available Hotels</Text>
+                        <Text className="text-gray-900 dark:text-white font-extrabold text-xl">Available Hotels</Text>
                         <Text className="text-gray-400 text-sm">{hotels.length} hotels found</Text>
                     </View>
                 )}
@@ -270,8 +273,8 @@ export default function Hotel() {
                                 {expand !== index && (
                                     <TouchableOpacity
                                         onPress={() => handleExpand(hotel, index)}
-                                        className="bg-white rounded-2xl border border-gray-100 w-full overflow-hidden"
-                                        style={{ elevation: 3 }}
+                                        className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 w-full overflow-hidden"
+                                        style={{ elevation: isDark ? 0 : 3 }}
                                         activeOpacity={0.92}
                                     >
                                         {/* Image Banner */}
@@ -287,10 +290,10 @@ export default function Hotel() {
                                         <View className="px-4 pt-3 pb-2">
                                             <View className="flex-row items-start justify-between">
                                                 <View className="flex-1 pr-3">
-                                                    <Text className="text-gray-900 text-base font-bold" numberOfLines={1}>{hotel.hotel_name}</Text>
+                                                    <Text className="text-gray-900 dark:text-white text-base font-bold" numberOfLines={1}>{hotel.hotel_name}</Text>
                                                     <View className="flex-row items-center mt-1">
                                                         <Image source={star} className="h-3.5 w-3.5" />
-                                                        <Text className="text-gray-700 text-xs font-semibold pl-1">{hotel.star_rating}</Text>
+                                                        <Text className="text-gray-700 dark:text-gray-300 text-xs font-semibold pl-1">{hotel.star_rating}</Text>
                                                         <Text className="text-gray-400 text-xs pl-1.5">({hotel.review_count} reviews)</Text>
                                                         {hotel.distanceKm != null && (
                                                             <Text className="text-gray-400 text-xs pl-1.5">• {hotel.distanceKm}Km away</Text>
@@ -315,34 +318,34 @@ export default function Hotel() {
 
                                 {/* Expanded Card */}
                                 {expand === index && (
-                                    <View className="bg-white rounded-xl border border-gray-200 translate-y-2 w-full mb-12 overflow-hidden">
+                                    <View className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 translate-y-2 w-full mb-12 overflow-hidden" style={{ elevation: isDark ? 0 : 3 }}>
                                         <Image source={{ uri: proxyImage(hotel.image_url) }} className="w-full h-48 absolute" resizeMode="cover" style={{ width: '100%', height: 192 }} />
 
                                         <TouchableOpacity onPress={() => setExpand(null)} className="absolute right-4 mt-4">
                                             <Image source={dropw} className="h-6 w-6" />
                                         </TouchableOpacity>
 
-                                        <View className="bg-white rounded-b-xl mt-32">
+                                        <View className="bg-white dark:bg-gray-800 rounded-b-xl mt-32">
                                             <View className="flex-row">
-                                                <View className="pl-3 pt-4">
-                                                    <Text className="text-xl text-black font-bold">{hotel.hotel_name}</Text>
+                                                <View className="pl-3 pt-4 flex-1">
+                                                    <Text className="text-xl text-black dark:text-white font-bold">{hotel.hotel_name}</Text>
                                                     <View className="flex-row pt-1">
                                                         <Image source={star} className="h-5 w-5" />
-                                                        <Text className="text-l font-medium text-black pl-2">{hotel.star_rating}</Text>
+                                                        <Text className="text-l font-medium text-black dark:text-white pl-2">{hotel.star_rating}</Text>
                                                         <Text className="text-sm font-medium text-gray-400 pl-2">({hotel.review_count})</Text>
                                                         {hotel.distanceKm != null && (
                                                             <Text className="text-sm font-medium text-gray-400 pl-2">• {hotel.distanceKm}Km away</Text>
                                                         )}
                                                     </View>
                                                 </View>
-                                                <View className="flex items-end pl-4 pt-4">
-                                                    <Text className="text-red-500 font-extrabold text-2xl">{hotel.price_per_night_usd}</Text>
+                                                <View className="flex items-end pl-4 pt-4 pr-3">
+                                                    <Text className="text-red-500 dark:text-red-400 font-extrabold text-2xl">{hotel.price_per_night_usd}</Text>
                                                     <Text className="text-sm font-medium text-gray-400">per night</Text>
                                                 </View>
                                             </View>
 
                                             <View className="px-4 pt-3">
-                                                <Text className="text-l text-gray-600">{hotel.description}</Text>
+                                                <Text className="text-l text-gray-600 dark:text-gray-300">{hotel.description}</Text>
                                             </View>
 
                                             <View className="flex-row flex-wrap pl-4 py-3">
@@ -352,23 +355,23 @@ export default function Hotel() {
                                                     return (
                                                         <View key={index} className="w-1/3 flex-row my-2 items-center">
                                                             {icon && (<Image source={icon} className="w-5 h-5 mr-2 items-center" />)}
-                                                            <Text className="text-green-400 text-xs">{name}</Text>
+                                                            <Text className="text-green-500 dark:text-green-400 text-xs">{name}</Text>
                                                         </View>
                                                     );
                                                 }) : null}
                                             </View>
 
                                             <View className="flex items-end px-3">
-                                                <TouchableOpacity onPress={() => openSlotPicker(hotel,index)} className="bg-red-400 rounded-3xl translate-y-2 border border-gray-100 h-12 w-32 flex justify-center items-center">
+                                                <TouchableOpacity onPress={() => openSlotPicker(hotel,index)} className="bg-red-400 rounded-3xl translate-y-2 border border-red-500 h-12 w-32 flex justify-center items-center">
                                                     <Text className="text-xl font-bold text-white">Select</Text>
                                                 </TouchableOpacity>
                                             </View>
 
-                                            <View className="h-[1px] bg-gray-300 mx-4 mt-7 mb-6" />
+                                            <View className="h-[1px] bg-gray-300 dark:bg-gray-700 mx-4 mt-7 mb-6" />
 
                                             <View className="flex-row">
                                                 <Image source={location} className="h-5 w-5 ml-5 mt-1" />
-                                                <Text className="text-xl text-black font-bold pl-3">Nearby Atrraction places</Text>
+                                                <Text className="text-xl text-black dark:text-white font-bold pl-3">Nearby Atrraction places</Text>
                                             </View>
 
                                             {nearbyLoading[index] ? (
@@ -378,17 +381,17 @@ export default function Hotel() {
                                                     <View className="flex-row py-3 px-6">
                                                         {(nearbymap[index] && nearbymap[index].length > 0) ? nearbymap[index].map((attraction, i) => (
                                                             <View key={i} className="pr-3">
-                                                                <View className="bg-white h-80 w-64 rounded-xl overflow-hidden relative border border-gray-100">
+                                                                <View className="bg-white dark:bg-gray-700 h-80 w-64 rounded-xl overflow-hidden relative border border-gray-100 dark:border-gray-600">
                                                                     <Image source={{ uri: proxyImage(attraction.image_url) }} className="w-full h-36" />
-                                                                    <View className="left-0 right-0 top-[50%] bg-white rounded-b-xl bottom-0 absolute">
-                                                                        <Text className="text-black text-l font-bold pt-2">{attraction.attraction_name}</Text>
-                                                                        <View className="flex-row py-2">
+                                                                    <View className="left-0 right-0 top-[50%] bg-white dark:bg-gray-700 rounded-b-xl bottom-0 absolute">
+                                                                        <Text className="text-black dark:text-white text-l font-bold pt-2 px-3">{attraction.attraction_name}</Text>
+                                                                        <View className="flex-row py-2 px-3">
                                                                             <Image source={star} className="h-4 w-4" />
-                                                                            <Text className="text-sm font-medium text-black pl-2">{attraction.rating}</Text>
+                                                                            <Text className="text-sm font-medium text-black dark:text-white pl-2">{attraction.rating}</Text>
                                                                             <Text className="text-sm font-medium text-gray-400 pl-2">{attraction.distanceKm != null ? `• ${attraction.distanceKm} km away` : ''}</Text>
                                                                         </View>
                                                                         <ScrollView style={{ maxHeight: 90 }} showsVerticalScrollIndicator={true}>
-                                                                            <Text className="text-sm font-medium text-gray-400 px-4">{attraction.description}</Text>
+                                                                            <Text className="text-sm font-medium text-gray-500 dark:text-gray-300 px-4">{attraction.description}</Text>
                                                                         </ScrollView>
                                                                     </View>
                                                                 </View>
@@ -398,8 +401,8 @@ export default function Hotel() {
                                                 </ScrollView>
                                             )}
 
-                                            <View className="flex items-center px-3 pb-6">
-                                                <TouchableOpacity onPress={() => addHotelAndAttractions(hotel, index)} className="bg-red-400 rounded-3xl border border-gray-100 h-12 w-64 flex justify-center items-center">
+                                            <View className="flex items-center px-3 pb-6 mt-4">
+                                                <TouchableOpacity onPress={() => addHotelAndAttractions(hotel, index)} className="bg-red-400 rounded-3xl border border-red-500 h-12 w-64 flex justify-center items-center">
                                                     <Text className="text-xl font-bold text-white">Add to To-Do list</Text>
                                                 </TouchableOpacity>
                                             </View>
@@ -415,12 +418,12 @@ export default function Hotel() {
             </SafeAreaView>
             <Modal visible={!!slotModelFor} transparent animationType='fade' onRequestClose={()=>setSlotModelFor(null)}>
                 <View className="flex-1 bg-black/40 justify-center items-center">
-                    <View className="bg-white rounded-2xl p-5 w-72">
-                        <Text className="text-gray-900 font-bold text-base mb-3">When is this for?</Text>
+                    <View className="bg-white dark:bg-gray-800 rounded-2xl p-5 w-72">
+                        <Text className="text-gray-900 dark:text-white font-bold text-base mb-3">When is this for?</Text>
                         {Hotel_SLots.map((s)=>(
                             <TouchableOpacity key={s.key} onPress={() => confermSlot(s.key)} className="flex-row items-center py-2.5">
                                 <View className="w-5 h-5 rounded-full border-2 border-red-400 mr-3" />
-                                <Text className="text-gray-700 text-sm">{s.label}</Text>
+                                <Text className="text-gray-700 dark:text-gray-300 text-sm">{s.label}</Text>
                             </TouchableOpacity>
                         ))}
                         <TouchableOpacity onPress={() => setSlotModelFor(null)} className="mt-2">

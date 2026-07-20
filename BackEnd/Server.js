@@ -6,6 +6,7 @@ app.use(cors());
 app.use(express.json());
 const dns = require("dns");
 const { features } = require("process");
+const turf = require("@turf/turf");
 const { default: BASE_URL } = require("../FrontEnd/my-app/config");
 
 const uri = "mongodb+srv://umeshmaduwantha:Passivevoice%4010@cluster0.oymmo9e.mongodb.net/yourDatabaseName?retryWrites=true&w=majority&appName=Cluster0";
@@ -22,8 +23,22 @@ async function mongodbconnect() {
   } catch (err) {
     console.error(err);
   }
-}
+};
 
+async function geocodeCity(cityName) {
+  const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en&format=json&country=LK`);
+  const data = await res.json();
+  if (!data.results || data.results.length == 0) return null;
+  const { latitude, longitude, name } = data.results[0];
+  return { latitude, longitude, name };
+}
+async function getRouteGeometry(startPoint, endPoint) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${startPoint.longitude},${startPoint.latitude};${endPoint.longitude},${endPoint.latitude}?overview=full&geometries=geojson`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.routes || data.routes.length === 0) return null;
+  return data.routes[0].geometry;
+}
 const getdistancekm = (lat1, lng1, lat2, lng2) => {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -408,6 +423,94 @@ app.get("/auth/user", async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 });
+
+app.get("/route/recommendations", async (req, res) => {
+  try {
+    const { start, destination, limit = 20, buffer = 20 } = req.query;
+    if (!start || !destination) {
+      return res.status(400).json({ error: "start and destination are required" });
+    }
+    const [startPoint, endPoint] = await Promise.all([
+      geocodeCity(start),
+      geocodeCity(destination)
+    ])
+    if (!startPoint || !endPoint) {
+      return res.status(400).json({ error: "Could not locate one of the given places" });
+    }
+    const routeGeometry = await getRouteGeometry(startPoint, endPoint);
+    if (!routeGeometry) {
+      return res.status(404).json({ error: "No route found between these locations" });
+    }
+
+    const routeline = turf.lineString(routeGeometry.coordinates);
+    const routeLengthKm = turf.length(routeline, { units: "kilometers" });
+    const bufferKm = parseFloat(buffer);
+    const maxResults = parseInt(limit);
+
+    // Fetch all attractions and filter by distance
+    const allPlaces = await db.collection("Attraction_places").find({}).toArray();
+
+    const candidates = allPlaces
+      .filter((place) => {
+        if (!place.latitude || !place.longitude) return false;
+        const point = turf.point([parseFloat(place.longitude), parseFloat(place.latitude)]);
+        const distKm = turf.pointToLineDistance(point, routeline, { units: "kilometers" });
+        return distKm <= bufferKm;
+      })
+      .map((place) => {
+        const point = turf.point([parseFloat(place.longitude), parseFloat(place.latitude)]);
+        const nearest = turf.nearestPointOnLine(routeline, point, { units: "kilometers" });
+        const distanceFromRouteKm = turf.pointToLineDistance(point, routeline, { units: "kilometers" });
+        return {
+          ...place,
+          distanceFromRouteKm: parseFloat(distanceFromRouteKm.toFixed(2)),
+          distanceAlongRouteKm: parseFloat(nearest.properties.location.toFixed(2)),
+        };
+      })
+      .sort((a, b) => a.distanceAlongRouteKm - b.distanceAlongRouteKm);
+
+    // One place from each city
+    const selectedIds = new Set();
+    const cityBest = [];
+
+    // Group by city, pick highest-rated 
+    const cityMap = {};
+    for (const place of candidates) {
+      const city = (place.city || "Unknown").trim().toLowerCase();
+      if (!cityMap[city]) cityMap[city] = [];
+      cityMap[city].push(place);
+    }
+    for (const city of Object.keys(cityMap)) {
+      const best = cityMap[city].sort((a, b) => (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0))[0];
+      cityBest.push(best);
+      selectedIds.add(String(best._id));
+    }
+
+    cityBest.sort((a, b) => a.distanceAlongRouteKm - b.distanceAlongRouteKm);
+
+    const extras = candidates.filter(p => !selectedIds.has(String(p._id)));
+
+    // Merge: city picks first (up to limit)
+    const merged = [...cityBest, ...extras].slice(0, maxResults);
+
+    merged.sort((a, b) => a.distanceAlongRouteKm - b.distanceAlongRouteKm);
+
+    res.json({
+      start: startPoint,
+      destination: endPoint,
+      routeLengthKm: parseFloat(routeLengthKm.toFixed(2)),
+      bufferKm,
+      count: merged.length,
+      places: merged,
+    })
+  } catch (err) {
+    console.error("Route recommendations error:", err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+})
+
+
+
 
 async function createServer() {
   await mongodbconnect();

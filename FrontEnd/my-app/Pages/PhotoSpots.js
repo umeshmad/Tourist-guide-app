@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Text, View, TouchableOpacity, Image, ScrollView, TextInput, Linking, Alert } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import '../global.css';
 
 import logo from '../assets/search.png';
@@ -137,6 +138,9 @@ export default function PhotoSpots() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSpotId, setExpandedSpotId] = useState(null);
 
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const categories = ['All', 'Viewpoint', 'Beach', 'Waterfall', 'Wildlife', 'Landmark', 'Cultural Site'];
 
   const filteredSpots = PHOTO_SPOTS_DATA.filter(spot => {
@@ -155,16 +159,16 @@ export default function PhotoSpots() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView className="bg-white flex-1" edges={['top', 'right', 'left']}>
+      <SafeAreaView className="bg-white dark:bg-gray-900 flex-1" edges={['top', 'right', 'left']}>
 
         {/* Search Bar */}
         <View className="px-4 pt-6 pb-3">
-          <View className="flex-row items-center bg-gray-100 rounded-2xl py-3 px-4">
-            <Image source={logo} className="w-5 h-5 opacity-50" />
+          <View className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-2xl py-3 px-4">
+            <Image source={logo} className="w-5 h-5 opacity-50" style={isDark ? { tintColor: 'white' } : {}} />
             <TextInput
               placeholder="Search photo spots, districts..."
-              placeholderTextColor="#9CA3AF"
-              className="pl-3 text-[15px] flex-1 text-gray-800"
+              placeholderTextColor={isDark ? "#9CA3AF" : "#9CA3AF"}
+              className="pl-3 text-[15px] flex-1 text-gray-800 dark:text-gray-200"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -178,9 +182,9 @@ export default function PhotoSpots() {
               <TouchableOpacity
                 key={category}
                 onPress={() => setSelectedCategory(category)}
-                className={`rounded-full px-4 py-2 mr-2 border ${selectedCategory === category ? 'bg-purple-600 border-purple-600' : 'bg-white border-gray-200'}`}
+                className={`rounded-full px-4 py-2 mr-2 border ${selectedCategory === category ? 'bg-purple-600 border-purple-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}
               >
-                <Text className={`text-sm font-bold ${selectedCategory === category ? 'text-white' : 'text-gray-600'}`}>{category}</Text>
+                <Text className={`text-sm font-bold ${selectedCategory === category ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{category}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -190,16 +194,16 @@ export default function PhotoSpots() {
 
           {/* Trending Section */}
           <View className="px-4 pb-3">
-            <Text className="text-gray-900 font-extrabold text-xl mb-3">Trending Photo Spots</Text>
+            <Text className="text-gray-900 dark:text-white font-extrabold text-xl mb-3">Trending Photo Spots</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {PHOTO_SPOTS_DATA.slice(0, 3).map((spot) => (
                 <TouchableOpacity
                   key={`featured-${spot.id}`}
                   onPress={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
-                  className="h-44 w-60 rounded-2xl overflow-hidden mr-4 border border-gray-100"
-                  style={{ elevation: 3 }}
+                  className="h-44 w-60 rounded-2xl overflow-hidden mr-4 border border-gray-100 dark:border-gray-700"
+                  style={{ elevation: isDark ? 0 : 3 }}
                 >
-                  <Image source={{ uri: spot.image_url }} className="h-full w-full absolute" resizeMode="cover" />
+                  <Image source={{ uri: spot.image_url }} className="h-full w-full absolute bg-gray-200 dark:bg-gray-700" resizeMode="cover" />
                   <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/45 justify-end p-4">
                     <Text className="text-white text-lg font-bold leading-5">{spot.name}</Text>
                     <View className="flex-row items-center mt-1">
@@ -215,7 +219,7 @@ export default function PhotoSpots() {
 
           {/* All Spots Label */}
           <View className="px-4 pt-2 pb-3">
-            <Text className="text-gray-900 font-extrabold text-xl">Explore All Photo Spots</Text>
+            <Text className="text-gray-900 dark:text-white font-extrabold text-xl">Explore All Photo Spots</Text>
             <Text className="text-gray-400 text-sm">{filteredSpots.length} spots match your criteria</Text>
           </View>
 
@@ -231,19 +235,19 @@ export default function PhotoSpots() {
                   {!isExpanded && (
                     <TouchableOpacity
                       onPress={() => setExpandedSpotId(spot.id)}
-                      className="bg-white rounded-2xl border border-gray-100 w-full overflow-hidden"
-                      style={{ elevation: 3 }}
+                      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 w-full overflow-hidden"
+                      style={{ elevation: isDark ? 0 : 3 }}
                       activeOpacity={0.92}
                     >
                       {/* Image Banner */}
-                      <View className="relative h-36 w-full">
+                      <View className="relative h-36 w-full bg-gray-200 dark:bg-gray-700">
                         <Image source={{ uri: spot.image_url }} className="w-full h-full" resizeMode="cover" />
                         {/* Category badge */}
                         <View className="absolute top-3 left-3 bg-purple-600 rounded-xl px-2.5 py-1">
                           <Text className="text-white text-xs font-bold">{spot.category}</Text>
                         </View>
                         {/* Rating badge */}
-                        <View className="absolute top-3 right-3 bg-white rounded-xl px-2.5 py-1.5" style={{ elevation: 4 }}>
+                        <View className="absolute top-3 right-3 bg-white dark:bg-gray-900 rounded-xl px-2.5 py-1.5" style={{ elevation: isDark ? 0 : 4 }}>
                           <Text className="text-amber-500 font-extrabold text-sm">★ {spot.rating}</Text>
                         </View>
                       </View>
@@ -251,12 +255,12 @@ export default function PhotoSpots() {
                       {/* Info Row */}
                       <View className="px-4 py-3 flex-row items-center justify-between">
                         <View className="flex-1 pr-3">
-                          <Text className="text-gray-900 text-base font-bold" numberOfLines={1}>{spot.name}</Text>
-                          <Text className="text-gray-400 text-xs mt-0.5">{spot.district} District • {spot.nearest_city}</Text>
-                          <Text className="text-gray-300 text-xs mt-0.5">{spot.nearest_city_distance_km} km away</Text>
+                          <Text className="text-gray-900 dark:text-white text-base font-bold" numberOfLines={1}>{spot.name}</Text>
+                          <Text className="text-gray-400 dark:text-gray-400 text-xs mt-0.5">{spot.district} District • {spot.nearest_city}</Text>
+                          <Text className="text-gray-300 dark:text-gray-500 text-xs mt-0.5">{spot.nearest_city_distance_km} km away</Text>
                         </View>
-                        <View className="bg-purple-50 border border-purple-200 rounded-xl px-3 py-1.5">
-                          <Text className="text-purple-600 text-xs font-bold">View</Text>
+                        <View className="bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-500 rounded-xl px-3 py-1.5">
+                          <Text className="text-purple-600 dark:text-purple-400 text-xs font-bold">View</Text>
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -264,8 +268,8 @@ export default function PhotoSpots() {
 
                   {/* Expanded Card */}
                   {isExpanded && (
-                    <View className="bg-white rounded-xl border border-gray-200 w-full mb-2 overflow-hidden shadow-md">
-                      <Image source={{ uri: spot.image_url }} className="w-full h-52" />
+                    <View className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 w-full mb-2 overflow-hidden" style={{ elevation: isDark ? 0 : 3 }}>
+                      <Image source={{ uri: spot.image_url }} className="w-full h-52 bg-gray-200 dark:bg-gray-700" />
 
                       <TouchableOpacity
                         onPress={() => setExpandedSpotId(null)}
@@ -274,57 +278,57 @@ export default function PhotoSpots() {
                         <Image source={dropw} className="h-5 w-5" />
                       </TouchableOpacity>
 
-                      <View className="p-4 bg-white">
+                      <View className="p-4 bg-white dark:bg-gray-800">
                         <View className="flex-row justify-between items-start">
                           <View className="flex-1 pr-2">
-                            <Text className="text-xl text-black font-extrabold">{spot.name}</Text>
+                            <Text className="text-xl text-black dark:text-white font-extrabold">{spot.name}</Text>
                             <View className="flex-row items-center mt-1.5">
                               <Image source={star} className="h-4 w-4" />
-                              <Text className="text-sm font-bold text-black pl-1">{spot.rating}</Text>
-                              <Text className="text-xs text-gray-500 pl-2">• {spot.district} District ({spot.province} Province)</Text>
+                              <Text className="text-sm font-bold text-black dark:text-white pl-1">{spot.rating}</Text>
+                              <Text className="text-xs text-gray-500 dark:text-gray-400 pl-2">• {spot.district} District ({spot.province} Province)</Text>
                             </View>
                           </View>
-                          <View className="bg-purple-100 rounded-lg px-2.5 py-1">
-                            <Text className="text-purple-700 text-xs font-bold">{spot.category}</Text>
+                          <View className="bg-purple-100 dark:bg-purple-900/40 rounded-lg px-2.5 py-1">
+                            <Text className="text-purple-700 dark:text-purple-400 text-xs font-bold">{spot.category}</Text>
                           </View>
                         </View>
 
-                        <Text className="text-sm text-gray-600 mt-3 leading-5">{spot.description}</Text>
+                        <Text className="text-sm text-gray-600 dark:text-gray-300 mt-3 leading-5">{spot.description}</Text>
 
-                        <View className="flex-row flex-wrap mt-4 border-t border-b border-gray-100 py-3">
+                        <View className="flex-row flex-wrap mt-4 border-t border-b border-gray-100 dark:border-gray-700 py-3">
                           <View className="w-1/2 my-1.5 flex-row items-center">
-                            <Text className="text-gray-400 text-xs font-semibold mr-1">Best Time:</Text>
-                            <Text className="text-gray-800 text-xs font-bold">{spot.best_time_of_day}</Text>
+                            <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold mr-1">Best Time:</Text>
+                            <Text className="text-gray-800 dark:text-gray-300 text-xs font-bold">{spot.best_time_of_day}</Text>
                           </View>
                           <View className="w-1/2 my-1.5 flex-row items-center">
-                            <Text className="text-gray-400 text-xs font-semibold mr-1">Season:</Text>
-                            <Text className="text-gray-800 text-xs font-bold">{spot.best_season}</Text>
+                            <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold mr-1">Season:</Text>
+                            <Text className="text-gray-800 dark:text-gray-300 text-xs font-bold">{spot.best_season}</Text>
                           </View>
                           <View className="w-1/2 my-1.5 flex-row items-center">
-                            <Text className="text-gray-400 text-xs font-semibold mr-1">Type:</Text>
-                            <Text className="text-gray-800 text-xs font-bold" numberOfLines={1}>{spot.photography_type}</Text>
+                            <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold mr-1">Type:</Text>
+                            <Text className="text-gray-800 dark:text-gray-300 text-xs font-bold" numberOfLines={1}>{spot.photography_type}</Text>
                           </View>
                           <View className="w-1/2 my-1.5 flex-row items-center">
-                            <Text className="text-gray-400 text-xs font-semibold mr-1">Difficulty:</Text>
-                            <Text className="text-gray-800 text-xs font-bold">{spot.difficulty_level}</Text>
+                            <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold mr-1">Difficulty:</Text>
+                            <Text className="text-gray-800 dark:text-gray-300 text-xs font-bold">{spot.difficulty_level}</Text>
                           </View>
                           <View className="w-1/2 my-1.5 flex-row items-center">
-                            <Text className="text-gray-400 text-xs font-semibold mr-1">Distance:</Text>
-                            <Text className="text-gray-800 text-xs font-bold">{spot.nearest_city_distance_km} km from {spot.nearest_city}</Text>
+                            <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold mr-1">Distance:</Text>
+                            <Text className="text-gray-800 dark:text-gray-300 text-xs font-bold">{spot.nearest_city_distance_km} km from {spot.nearest_city}</Text>
                           </View>
                           <View className="w-1/2 my-1.5 flex-row items-center">
-                            <Text className="text-gray-400 text-xs font-semibold mr-1">Fee:</Text>
-                            <Text className="text-purple-600 text-xs font-bold">{spot.entrance_fee_lkr}</Text>
+                            <Text className="text-gray-400 dark:text-gray-500 text-xs font-semibold mr-1">Fee:</Text>
+                            <Text className="text-purple-600 dark:text-purple-400 text-xs font-bold">{spot.entrance_fee_lkr}</Text>
                           </View>
                         </View>
 
                         <View className="flex-row justify-between items-center mt-4">
                           <TouchableOpacity
                             onPress={() => handleOpenMap(spot.google_map_link)}
-                            className="flex-row items-center border border-purple-600 rounded-3xl py-2.5 px-4 flex-1 justify-center mr-2"
+                            className="flex-row items-center border border-purple-600 dark:border-purple-500 rounded-3xl py-2.5 px-4 flex-1 justify-center mr-2"
                           >
-                            <Image source={location} className="w-4 h-4 mr-1.5" style={{ tintColor: '#9333ea' }} />
-                            <Text className="text-purple-600 text-sm font-bold">Directions</Text>
+                            <Image source={location} className="w-4 h-4 mr-1.5" style={{ tintColor: isDark ? '#a855f7' : '#9333ea' }} />
+                            <Text className="text-purple-600 dark:text-purple-400 text-sm font-bold">Directions</Text>
                           </TouchableOpacity>
 
                           <TouchableOpacity

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import '../global.css';
-import { Image, Text, ScrollView, TextInput, View, TouchableOpacity, FlatList, Linking, Alert,model } from 'react-native';
+import { Image, Text, ScrollView, TextInput, View, TouchableOpacity, FlatList, Linking, Alert, Modal } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import logo from '../assets/search.png';
 import star from '../assets/star.png';
 import drop from '../assets/drop.png';
@@ -26,6 +27,9 @@ export default function Resturants() {
     const [slotModelFor,setSlotModelFor]=useState(null);
     const [selectedSlot, setSelectedSlot]=useState({});
 
+    const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === 'dark';
+
     const addToTasks = async (resturant) => {
         try {
             const dayID = Route.params?.dayID || 1;
@@ -49,8 +53,7 @@ export default function Resturants() {
 
     const proxyImage = (rawUrl) => {
         if (!rawUrl) return null;
-        const url = rawUrl.replace(/^"|"$/g, '').trim();
-        return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=400`;
+        return rawUrl.replace(/^"|"$/g, '').trim();
     };
 
     useEffect(() => {
@@ -115,9 +118,9 @@ export default function Resturants() {
     };
 
     const Attraction_Slots=[
-        {key:'breakfast',Label:'Breakfast'},
-        {key:'lunch',label:'Lunch'},
-        {key:'dinner',label:'Dinner'}
+        {key:'BreakFast',label:'Breakfast'},
+        {key:'Lunch',label:'Lunch'},
+        {key:'Dinner',label:'Dinner'}
     ];
 
     const openSlotPicker=(resturant,index)=>setSlotModelFor({resturant,index});
@@ -130,16 +133,16 @@ export default function Resturants() {
 
     return (
         <SafeAreaProvider>
-            <SafeAreaView className="bg-white flex-1" edges={['top', 'right', 'left']}>
+            <SafeAreaView className="bg-white dark:bg-gray-900 flex-1" edges={['top', 'right', 'left']}>
 
                 {/* Search Bar */}
                 <View className="px-4 pt-6 pb-3">
-                    <View className="flex-row items-center bg-gray-100 rounded-2xl py-3 px-4">
-                        <Image source={logo} className="w-5 h-5 opacity-50" />
+                    <View className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-2xl py-3 px-4">
+                        <Image source={logo} className="w-5 h-5 opacity-50" style={isDark ? { tintColor: 'white' } : {}} />
                         <TextInput
                             placeholder="Search restaurants, cuisine, city..."
-                            placeholderTextColor="#9CA3AF"
-                            className="pl-3 text-[14px] flex-1 text-gray-800"
+                            placeholderTextColor={isDark ? "#9CA3AF" : "#9CA3AF"}
+                            className="pl-3 text-[14px] flex-1 text-gray-800 dark:text-gray-200"
                             onChangeText={(text) => { setSearch(text); fetchResturants(text, selected); }}
                         />
                     </View>
@@ -151,9 +154,9 @@ export default function Resturants() {
                         <TouchableOpacity
                             key={item}
                             onPress={() => { setSelected(item); fetchResturants(search, item); }}
-                            className={`flex-1 items-center justify-center rounded-full py-2.5 ${index < arr.length - 1 ? 'mr-2' : ''} border ${selected === item ? 'bg-orange-500 border-orange-500' : 'bg-white border-gray-200'}`}
+                            className={`flex-1 items-center justify-center rounded-full py-2.5 ${index < arr.length - 1 ? 'mr-2' : ''} border ${selected === item ? 'bg-orange-500 border-orange-500' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}
                         >
-                            <Text className={`text-xs font-bold ${selected === item ? 'text-white' : 'text-gray-600'}`} numberOfLines={1}>{item}</Text>
+                            <Text className={`text-xs font-bold ${selected === item ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`} numberOfLines={1}>{item}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -161,10 +164,10 @@ export default function Resturants() {
                 {/* Popular Restaurants */}
                 {populerResturants.length > 0 && (
                     <View className="px-4 pb-2">
-                        <Text className="text-gray-900 font-extrabold text-xl mb-3">Popular Restaurants</Text>
+                        <Text className="text-gray-900 dark:text-white font-extrabold text-xl mb-3">Popular Restaurants</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {populerResturants.map((r, index) => (
-                                <View key={index} className="rounded-2xl overflow-hidden mr-4 border border-gray-100 w-60 h-44" style={{ elevation: 3 }}>
+                                <View key={index} className="rounded-2xl overflow-hidden mr-4 border border-gray-100 dark:border-gray-700 w-60 h-44" style={{ elevation: isDark ? 0 : 3 }}>
                                     <Image source={{ uri: r.image_url_1 }} className="h-full w-full absolute" resizeMode="cover" />
                                     <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/45 justify-end p-4">
                                         <Text className="text-white font-bold text-base" numberOfLines={1}>{r.restaurant_name.replace(/ Restaurant$/i, '')}</Text>
@@ -183,7 +186,7 @@ export default function Resturants() {
 
                 {/* All Restaurants */}
                 <View className="px-4 pt-3 pb-2">
-                    <Text className="text-gray-900 font-extrabold text-xl">All Restaurants</Text>
+                    <Text className="text-gray-900 dark:text-white font-extrabold text-xl">All Restaurants</Text>
                     <Text className="text-gray-400 text-sm">{resturant.length} restaurants found</Text>
                 </View>
 
@@ -199,8 +202,8 @@ export default function Resturants() {
                             {expand !== index && (
                                 <TouchableOpacity
                                     onPress={() => { setExpand(index); fetchNearBY(resturant.nearby_attractions); }}
-                                    className="bg-white rounded-2xl border border-gray-100 w-full overflow-hidden"
-                                    style={{ elevation: 3 }}
+                                    className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 w-full overflow-hidden"
+                                    style={{ elevation: isDark ? 0 : 3 }}
                                     activeOpacity={0.92}
                                 >
                                     {/* Image */}
@@ -215,7 +218,7 @@ export default function Resturants() {
                                             <Text className="text-white text-xs font-bold">{resturant.dining_type || resturant.amenity_type}</Text>
                                         </View>
                                         {/* Rating */}
-                                        <View className="absolute top-3 right-3 bg-white rounded-xl px-2.5 py-1.5" style={{ elevation: 4 }}>
+                                        <View className="absolute top-3 right-3 bg-white dark:bg-gray-900 rounded-xl px-2.5 py-1.5" style={{ elevation: isDark ? 0 : 4 }}>
                                             <Text className="text-amber-500 font-extrabold text-sm">★ {resturant.rating}</Text>
                                         </View>
                                     </View>
@@ -223,12 +226,12 @@ export default function Resturants() {
                                     {/* Info Row */}
                                     <View className="px-4 py-3 flex-row items-center justify-between">
                                         <View className="flex-1 pr-3">
-                                            <Text className="text-gray-900 text-base font-bold" numberOfLines={1}>{resturant.restaurant_name}</Text>
+                                            <Text className="text-gray-900 dark:text-white text-base font-bold" numberOfLines={1}>{resturant.restaurant_name}</Text>
                                             <Text className="text-gray-400 text-xs mt-0.5">{resturant.amenity_type} • {resturant.cuisine_type}</Text>
-                                            <Text className="text-gray-300 text-xs mt-0.5">({resturant.review_count} reviews)</Text>
+                                            <Text className="text-gray-300 dark:text-gray-500 text-xs mt-0.5">({resturant.review_count} reviews)</Text>
                                         </View>
-                                        <View className="bg-orange-50 border border-orange-200 rounded-xl px-3 py-1.5">
-                                            <Text className="text-orange-500 text-xs font-bold">View</Text>
+                                        <View className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-500 rounded-xl px-3 py-1.5">
+                                            <Text className="text-orange-500 dark:text-orange-400 text-xs font-bold">View</Text>
                                         </View>
                                     </View>
                                 </TouchableOpacity>
@@ -236,7 +239,7 @@ export default function Resturants() {
 
                             {/* Expanded Card */}
                             {expand === index && (
-                                <View className="bg-white rounded-xl border border-gray-200 w-full mb-2 overflow-hidden">
+                                <View className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 w-full mb-2 overflow-hidden" style={{ elevation: isDark ? 0 : 3 }}>
 
                                     <Image source={{ uri: proxyImage(resturant.image_url_1) }} className="w-full h-52" resizeMode="cover" style={{ width: '100%', height: 208 }} />
 
@@ -248,55 +251,55 @@ export default function Resturants() {
                                         <Text className="text-white text-xs font-bold">{resturant.dining_type}</Text>
                                     </View>
 
-                                    <View className="p-4 bg-white">
+                                    <View className="p-4 bg-white dark:bg-gray-800">
 
                                         <View className="flex-row justify-between items-start">
                                             <View className="flex-1 pr-2">
-                                                <Text className="text-xl text-black font-bold">{resturant.restaurant_name}</Text>
+                                                <Text className="text-xl text-black dark:text-white font-bold">{resturant.restaurant_name}</Text>
                                                 <View className="flex-row items-center mt-1">
                                                     <Image source={star} className="h-4 w-4" />
-                                                    <Text className="text-l font-medium text-black pl-2">{resturant.rating}</Text>
+                                                    <Text className="text-l font-medium text-black dark:text-white pl-2">{resturant.rating}</Text>
                                                     <Text className="text-xs text-gray-400 pl-2">({resturant.review_count} reviews)</Text>
                                                 </View>
                                             </View>
-                                            <View className="bg-orange-100 rounded-lg px-2 py-1">
-                                                <Text className="text-orange-600 text-xs font-bold">{resturant.cuisine_type}</Text>
+                                            <View className="bg-orange-100 dark:bg-orange-900/40 rounded-lg px-2 py-1">
+                                                <Text className="text-orange-600 dark:text-orange-400 text-xs font-bold">{resturant.cuisine_type}</Text>
                                             </View>
                                         </View>
 
                                         <View className="flex-row items-center mt-2">
                                             <Image source={location} className="h-4 w-4" />
-                                            <Text className="text-sm text-gray-500 pl-2">{resturant.address}, {resturant.city}, {resturant.district}, {resturant.province}</Text>
+                                            <Text className="text-sm text-gray-500 dark:text-gray-400 pl-2">{resturant.address}, {resturant.city}, {resturant.district}, {resturant.province}</Text>
                                         </View>
 
                                         {resturant.vegetarian_friendly === 'Yes' && (
                                             <View className="flex-row items-center mt-2">
-                                                <View className="bg-green-100 rounded-2xl px-3 py-1">
-                                                    <Text className="text-green-600 text-xs font-bold">Vegetarian Friendly</Text>
+                                                <View className="bg-green-100 dark:bg-green-900/30 rounded-2xl px-3 py-1">
+                                                    <Text className="text-green-600 dark:text-green-400 text-xs font-bold">Vegetarian Friendly</Text>
                                                 </View>
                                             </View>
                                         )}
 
-                                        <View className="h-[1px] bg-gray-200 my-4" />
+                                        <View className="h-[1px] bg-gray-200 dark:bg-gray-700 my-4" />
 
-                                        <View className="flex-row flex-wrap border-t border-b border-gray-100 py-3">
+                                        <View className="flex-row flex-wrap border-t border-b border-gray-100 dark:border-gray-700 py-3">
                                             {resturant.opening_hours ? (
                                                 <View className="w-full my-1 flex-row items-center">
                                                     <Text className="text-gray-400 text-xs font-semibold mr-1">Hours:</Text>
-                                                    <Text className="text-gray-700 text-xs font-bold flex-1">{resturant.opening_hours}</Text>
+                                                    <Text className="text-gray-700 dark:text-gray-300 text-xs font-bold flex-1">{resturant.opening_hours}</Text>
                                                 </View>
                                             ) : null}
                                             {resturant.phone ? (
                                                 <View className="w-full my-1 flex-row items-center">
                                                     <Text className="text-gray-400 text-xs font-semibold mr-1">Phone:</Text>
-                                                    <Text className="text-gray-700 text-xs font-bold">{resturant.phone}</Text>
+                                                    <Text className="text-gray-700 dark:text-gray-300 text-xs font-bold">{resturant.phone}</Text>
                                                 </View>
                                             ) : null}
                                             {resturant.website ? (
                                                 <View className="w-full my-1 flex-row items-center">
                                                     <Text className="text-gray-400 text-xs font-semibold mr-1">Website:</Text>
                                                     <TouchableOpacity onPress={() => Linking.openURL(resturant.website)}>
-                                                        <Text className="text-orange-500 text-xs font-bold">{resturant.website}</Text>
+                                                        <Text className="text-orange-500 dark:text-orange-400 text-xs font-bold" numberOfLines={1}>{resturant.website}</Text>
                                                     </TouchableOpacity>
                                                 </View>
                                             ) : null}
@@ -304,22 +307,22 @@ export default function Resturants() {
 
                                         {nearby.length > 0 && (
                                             <View className="mt-4">
-                                                <Text className="text-black font-bold text-l mb-2">Nearby Attractions</Text>
+                                                <Text className="text-black dark:text-white font-bold text-l mb-2">Nearby Attractions</Text>
                                                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                                     {nearby.map((place, index) => (
-                                                        <TouchableOpacity onPress={() => navigation.navigate("Attraction"), {
+                                                        <TouchableOpacity onPress={() => navigation.navigate("Attraction", {
                                                             selectAttraction: place,
                                                             expand: true
-                                                        }}>
-                                                            <View key={index} className="mr-3 w-44 rounded-xl overflow-hidden border border-gray-200">
+                                                        })}>
+                                                            <View key={index} className="mr-3 w-44 bg-white dark:bg-gray-700 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
                                                                 <Image source={{ uri: proxyImage(place.image_url) }} style={{ width: 176, height: 110 }} resizeMode="cover" />
                                                                 <View className="p-2">
-                                                                    <Text className="text-black font-bold text-xs" numberOfLines={1}>{place.attraction_name}</Text>
+                                                                    <Text className="text-black dark:text-white font-bold text-xs" numberOfLines={1}>{place.attraction_name}</Text>
                                                                     <View className="flex-row items-center mt-1">
                                                                         <Image source={star} className="h-3 w-3" />
-                                                                        <Text className="text-xs text-black pl-1">{place.rating}</Text>
+                                                                        <Text className="text-xs text-black dark:text-white pl-1">{place.rating}</Text>
                                                                     </View>
-                                                                    <Text className="text-gray-400 text-xs mt-1" numberOfLines={2}>{place.description}</Text>
+                                                                    <Text className="text-gray-400 dark:text-gray-400 text-xs mt-1" numberOfLines={2}>{place.description}</Text>
                                                                 </View>
                                                             </View>
                                                         </TouchableOpacity>
@@ -328,7 +331,7 @@ export default function Resturants() {
                                             </View>
                                         )}
 
-                                        <View className="h-[1px] bg-gray-200 my-4" />
+                                        <View className="h-[1px] bg-gray-200 dark:bg-gray-700 my-4" />
 
                                         <View className="flex-row justify-between items-center">
                                             <TouchableOpacity onPress={() => openMap(resturant.google_maps_link)} className="flex-1 border border-orange-500 rounded-3xl py-3 mr-2 justify-center items-center">
@@ -348,14 +351,14 @@ export default function Resturants() {
                 />
 
             </SafeAreaView>
-            <Model visible={!!slotModelFor} transparent animationType='fade' onRequestClose={()=>setSlotModelFor(null)}>
+            <Modal visible={!!slotModelFor} transparent animationType='fade' onRequestClose={()=>setSlotModelFor(null)}>
                 <View className="flex-1 bg-black/40 justify-center items-center">
-                    <View className="bg-white rounded-2xl p-5 w-72">
-                        <Text className="text-gray-900 font-bold text-base mb-3">When is this for?</Text>
+                    <View className="bg-white dark:bg-gray-800 rounded-2xl p-5 w-72">
+                        <Text className="text-gray-900 dark:text-white font-bold text-base mb-3">When is this for?</Text>
                         {Attraction_Slots.map((s)=>(
                             <TouchableOpacity key={s.key} onPress={() => confermSlot(s.key)} className="flex-row items-center py-2.5">
-                                <View className="w-5 h-5 rounded-full border-2 border-red-400 mr-3" />
-                                <Text className="text-gray-700 text-sm">{s.label}</Text>
+                                <View className="w-5 h-5 rounded-full border-2 border-orange-400 mr-3" />
+                                <Text className="text-gray-700 dark:text-gray-300 text-sm">{s.label}</Text>
                             </TouchableOpacity>
                         ))}
                             <TouchableOpacity onPress={() => setSlotModelFor(null)} className="mt-2">
@@ -363,7 +366,7 @@ export default function Resturants() {
                              </TouchableOpacity>
                     </View>
                 </View>
-            </Model>
+            </Modal>
         </SafeAreaProvider>
     );
 }

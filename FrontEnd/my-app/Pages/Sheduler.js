@@ -13,12 +13,13 @@ import emergency from '../assets/emergency.png';
 import emergency1 from '../assets/emergency1.png';
 import trashbin from '../assets/trashbin.png';
 import BASE_URL from '../config';
+import { useColorScheme } from 'nativewind';
 
 // Memoized stop row — prevents re-render of unchanged stops (fixes VirtualizedList warning)
-const TravelConnector = React.memo(({ timeBefore }) => (
-    <View className="flex-row items-center px-5 py-1 bg-blue-50">
-        <View className="w-1 h-4 bg-blue-300 ml-4 mr-3" />
-        <Text className="text-blue-400 text-xs italic">
+const TravelConnector = React.memo(({ timeBefore, isDark }) => (
+    <View className={`flex-row items-center px-5 py-1 ${isDark ? 'bg-gray-800' : 'bg-blue-50'}`}>
+        <View className={`w-1 h-4 ml-4 mr-3 ${isDark ? 'bg-gray-600' : 'bg-blue-300'}`} />
+        <Text className={`text-xs italic ${isDark ? 'text-gray-400' : 'text-blue-400'}`}>
             {timeBefore ? ` ${timeBefore}` : '↓'}
         </Text>
     </View>
@@ -54,15 +55,10 @@ const SLOT_META = {
 
 const SLOT_ORDER = ['All Day', 'BreakFast', 'Lunch', 'Dinner'];
 
-const getMissig = (dayId) => {
-    const stops = task[dayId] || [];
-    const filled = new Set(stops.map(s => s.slot).filter(Boolean));
-    return SLOT_ORDER.filter(m => !filled.has(m));
-}
 
 
 
-const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
+const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency, isDark }) => {
     const [showEmergency, setShowEmergency] = useState(false);
     const placeEmergency = t.emergency || null;
     const hasEmergency = !!(placeEmergency || userEmergency);
@@ -70,21 +66,21 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
 
     return (
         <View>
-            {index > 0 && <TravelConnector timeBefore={t._timeBefore} />}
+            {index > 0 && <TravelConnector timeBefore={t._timeBefore} isDark={isDark} />}
 
             {/* Stop row */}
-            <View className={`py-3 px-4 ${hasEmergency && !showEmergency ? '' : 'border-b border-gray-100'}`}>
+            <View className={`py-3 px-4 ${hasEmergency && !showEmergency ? '' : 'border-b border-gray-100 dark:border-gray-700'}`}>
                 <View className="flex-row justify-between items-center">
                     <View className="flex-row items-center flex-1 pr-2">
-                        <View className="bg-blue-50 w-8 h-8 rounded-full justify-center items-center mr-3">
-                            <Text className="text-blue-600 text-xs font-bold">{index + 1}</Text>
+                        <View className="bg-blue-50 dark:bg-gray-700 w-8 h-8 rounded-full justify-center items-center mr-3">
+                            <Text className="text-blue-600 dark:text-white text-xs font-bold">{index + 1}</Text>
                         </View>
                         <View className="flex-1">
-                            <Text className="text-gray-900 font-bold text-sm" numberOfLines={1}>
-                                {t.slot && SLOT_META[t.slot] ? `${SLOT_META[t.slot].label} ` : ''}
+                            <Text className="text-gray-900 dark:text-white font-bold text-sm" numberOfLines={1}>
+                                {t.slot && SLOT_META[t.slot] ? `${SLOT_META[t.slot].label} - ` : ''}
                                 {t.attraction_name || t.hotel_name || t.restaurant_name}
                             </Text>
-                            <Text className="text-gray-400 text-xs" numberOfLines={1}>
+                            <Text className="text-gray-400 dark:text-gray-500 text-xs" numberOfLines={1}>
                                 {t.hotel_name ? 'Hotel' : t.restaurant_name ? 'Restaurant' : 'Attraction'}
                             </Text>
                         </View>
@@ -93,7 +89,7 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
                         {hasEmergency && (
                             <TouchableOpacity
                                 onPress={() => setShowEmergency(p => !p)}
-                                className={`rounded-lg border border-red-200 mr-2 ${showEmergency ? 'bg-red-50' : 'bg-red-50'}`}
+                                className={`rounded-lg border border-red-200 dark:border-red-800 mr-2 ${showEmergency ? 'bg-red-50 dark:bg-red-900/30' : 'bg-red-50 dark:bg-red-900/30'}`}
                             >
                                 <Image source={emergency1} className="h-6 w-6"></Image>
                             </TouchableOpacity>
@@ -102,7 +98,7 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
                             <Text className="text-white text-xs font-bold">View</Text>
                         </TouchableOpacity>
                         {/* delete icon */}
-                        <TouchableOpacity onPress={onDelete} className="ml-2 bg-red-50 rounded-lg p-2">
+                        <TouchableOpacity onPress={onDelete} className="ml-2 bg-red-50 dark:bg-red-900/30 rounded-lg p-2">
                             <Image source={trashbin} className="w-6 h-6"></Image>
                         </TouchableOpacity>
                     </View>
@@ -110,19 +106,19 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
 
                 {/* Emergency Panel */}
                 {showEmergency && (
-                    <View className="mt-3 bg-red-50 rounded-xl p-3 border border-red-200">
+                    <View className="mt-3 bg-red-50 dark:bg-red-900/20 rounded-xl p-3 border border-red-200 dark:border-red-800/50">
                         <View className="flex-row">
                             <Image source={emergency1} className="h-10 w-10"></Image>
-                            <Text className="text-red-700 font-bold text-sm mb-2">Emergency Contacts</Text>
+                            <Text className="text-red-700 dark:text-red-400 font-bold text-sm mb-2">Emergency Contacts</Text>
                         </View>
                         {placeEmergency ? (
                             <View className="mb-2">
-                                <Text className="text-red-600 text-xs font-bold mb-1">Place Emergency Numbers</Text>
+                                <Text className="text-red-600 dark:text-red-400 text-xs font-bold mb-1">Place Emergency Numbers</Text>
                                 {placeEmergency.split(/[;,|]/).map((line, i) => {
                                     const trimmed = line.trim();
                                     return trimmed ? (
                                         <TouchableOpacity key={i} onPress={() => callNumber(trimmed)}>
-                                            <Text className="text-blue-600 text-xs leading-tight underline">{trimmed}</Text>
+                                            <Text className="text-blue-600 dark:text-blue-400 text-xs leading-tight underline">{trimmed}</Text>
                                         </TouchableOpacity>
                                     ) : null;
                                 })}
@@ -130,22 +126,22 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
                         ) : null}
 
                         {userEmergency ? (
-                            <View className={`${placeEmergency ? 'border-t border-red-200 pt-2' : ''}`}>
-                                <Text className="text-red-600 text-xs font-bold mb-1">👤 Your Emergency Contact</Text>
+                            <View className={`${placeEmergency ? 'border-t border-red-200 dark:border-red-800/50 pt-2' : ''}`}>
+                                <Text className="text-red-600 dark:text-red-400 text-xs font-bold mb-1">👤 Your Emergency Contact</Text>
                                 {userEmergency.name ? (
-                                    <Text className="text-gray-700 text-xs leading-snug">• Name: <Text className="font-bold">{userEmergency.name}</Text></Text>
+                                    <Text className="text-gray-700 dark:text-gray-300 text-xs leading-snug">• Name: <Text className="font-bold">{userEmergency.name}</Text></Text>
                                 ) : null}
                                 {userEmergency.phone ? (
                                     <TouchableOpacity onPress={() => callNumber(userEmergency.phone)}>
-                                        <Text className="text-gray-700 text-xs leading-snug">• Phone: <Text className="font-bold text-red-600">{userEmergency.phone}</Text></Text>
+                                        <Text className="text-gray-700 dark:text-gray-300 text-xs leading-snug">• Phone: <Text className="font-bold text-red-600 dark:text-red-400">{userEmergency.phone}</Text></Text>
                                     </TouchableOpacity>
                                 ) : null}
                                 {userEmergency.relationship ? (
-                                    <Text className="text-gray-500 text-xs leading-snug">• Relationship: {userEmergency.relationship}</Text>
+                                    <Text className="text-gray-500 dark:text-gray-400 text-xs leading-snug">• Relationship: {userEmergency.relationship}</Text>
                                 ) : null}
                                 {/* fallback if stored as plain string */}
                                 {typeof userEmergency === 'string' ? (
-                                    <Text className="text-gray-700 text-xs leading-tight">{userEmergency}</Text>
+                                    <Text className="text-gray-700 dark:text-gray-300 text-xs leading-tight">{userEmergency}</Text>
                                 ) : null}
                             </View>
                         ) : null}
@@ -158,6 +154,8 @@ const StopItem = React.memo(({ t, index, onView, onDelete, userEmergency }) => {
 
 export default function TourPlaning() {
     const navigation = useNavigation();
+    const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === 'dark';
     const [task, setTask] = useState({});
     const [travelTimes, setTravelTimes] = useState({}); 
     const [optimizing, setOptimizing] = useState({}); 
@@ -238,22 +236,42 @@ export default function TourPlaning() {
         return `${DAY_NAMES[newDate.getDay()]},${MONTH_NAMES[newDate.getMonth()]},${newDate.getDate()}`
     }
     const [date, setDate] = useState([{ id: 1, dateStr: formatDate(new Date()) }]);
+    
+    const getMissig = (dayId) => {
+        const stops = task[dayId] || [];
+        // If any hotel is booked for 'All Day', user stays at hotel — no meal check needed
+        const hasAllDayHotel = stops.some(s => s.hotel_name && s.slot === 'All Day');
+        if (hasAllDayHotel) return [];
+        const filled = new Set(stops.map(s => s.slot).filter(Boolean));
+        return ['BreakFast', 'Lunch', 'Dinner'].filter(m => !filled.has(m));
+    };
+
     const addDay = () => {
-        const lastDay=date[date.length-1];
-        const missing=lastDay ? getMissig(lastDay.id):[];
-        if(missing.length>0){
+        const lastDay = date[date.length - 1];
+        const missing = lastDay ? getMissig(lastDay.id) : [];
+        if (missing.length > 0) {
+            const labels = missing.map(m => SLOT_META[m]?.label || m).join(', ');
             Alert.alert(
-                `Day ${lastDay.id} is not complete`,
-                `Missing ${missing.join(',')}.\n\n Add these before starting a new day, or continue anyway?`,
+                `Day ${lastDay.id} meals incomplete`,
+                `Missing: ${labels}.\n\nAdd these restaurants before starting a new day, or continue anyway?`,
                 [
                     { text: "Go back & add", style: "cancel" },
-                    { text: "Continue Anyway", onPress: () => setDate(prev=>{
-                        const newDay = { id: prev.length + 1, dateStr: formatDate(new Date()) };
-                        setTask(p => ({ ...p, [newDay.id]: [] }));
-                        return [...prev, newDay];
-                    }) },
+                    {
+                        text: "Continue Anyway", onPress: () => setDate(prev => {
+                            const newDay = { id: prev.length + 1, dateStr: formatDate(new Date()) };
+                            setTask(p => ({ ...p, [newDay.id]: [] }));
+                            return [...prev, newDay];
+                        })
+                    },
                 ]
-            )
+            );
+        } else {
+            // All meal slots filled — create new day directly
+            setDate(prev => {
+                const newDay = { id: prev.length + 1, dateStr: formatDate(new Date()) };
+                setTask(p => ({ ...p, [newDay.id]: [] }));
+                return [...prev, newDay];
+            });
         }
     };
 
@@ -397,20 +415,20 @@ export default function TourPlaning() {
 
     return (
         <SafeAreaProvider>
-            <SafeAreaView className="bg-white flex-1" edges={['top', 'right', 'left']}>
+            <SafeAreaView className="bg-white dark:bg-gray-900 flex-1" edges={['top', 'right', 'left']}>
                 <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
 
                     {/* Header */}
                     <View className="px-4 pt-6 pb-4">
                         <View className="flex-row justify-between items-center">
                             <View>
-                                <Text className="text-gray-900 font-bold text-2xl">My Tour Plan</Text>
-                                <Text className="text-gray-400 text-sm mt-1">Organize your perfect trip</Text>
+                                <Text className="text-gray-900 dark:text-white font-bold text-2xl">My Tour Plan</Text>
+                                <Text className="text-gray-400 dark:text-gray-500 text-sm mt-1">Organize your perfect trip</Text>
                             </View>
                             <TouchableOpacity
                                 onPress={addDay}
                                 className="bg-blue-600 rounded-2xl px-4 py-2 flex-row items-center"
-                                style={{ elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 1 }}
+                                style={{ elevation: isDark ? 0 : 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 1 }}
                             >
                                 <Text className="text-white text-sm font-bold">+ Add</Text>
                             </TouchableOpacity>
@@ -422,15 +440,16 @@ export default function TourPlaning() {
                         return (
                             <View key={date.id}>
                                 {/* Day infomation */}
-                                <View className="mx-4 mb-4 flex-row items-center bg-blue-50 rounded-2xl px-4 py-3 border border-blue-100">
-                                    <Image source={Calander} className="w-7 h-7" />
+                                <View className="mx-4 mb-4 flex-row items-center bg-blue-50 dark:bg-gray-800 rounded-2xl px-4 py-3 border border-blue-100 dark:border-gray-700">
+                                    <Image source={Calander} className="w-7 h-7" style={isDark ? { tintColor: 'white' } : {}} />
                                     <View className="ml-3">
-                                        <Text className="text-blue-700 font-bold text-base">{date.id} Day Tour</Text>
+                                        <Text className="text-blue-700 dark:text-white font-bold text-base">{date.id} Day Tour</Text>
+
                                     </View>
                                 </View>
 
                                 <View className="mx-4">
-                                    <View className="bg-blue-700 rounded-2xl overflow-hidden" style={{ elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 }}>
+                                    <View className="bg-blue-700 dark:bg-gray-800 border dark:border-gray-700 rounded-2xl overflow-hidden" style={{ elevation: isDark ? 0 : 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 }}>
 
                                         <View className="px-4 py-4">
                                             {/* Day header row */}
@@ -441,7 +460,7 @@ export default function TourPlaning() {
                                                     </View>
                                                     <View className="ml-3">
                                                         <Text className="text-white font-bold text-xl">Day {date.id}</Text>
-                                                        <Text className="text-blue-200 text-sm">{date.dateStr}</Text>
+                                                        <Text className="text-blue-200 dark:text-gray-400 text-sm">{date.dateStr}</Text>
                                                     </View>
                                                 </View>
                                                 <View className="flex-row items-center">
@@ -464,23 +483,23 @@ export default function TourPlaning() {
 
                                             {/* Day Emergency Panel */}
                                             {showDayEmergency[date.id] && (
-                                                <View className="mt-3 bg-red-50 rounded-2xl p-3 border border-red-200">
+                                                <View className="mt-3 bg-red-50 dark:bg-red-900/30 rounded-2xl p-3 border border-red-200 dark:border-red-800">
                                                         <View className="flex-row">
                                                             <Image source={emergency1} className="h-6 w-6"></Image>
-                                                            <Text className="text-red-700 font-bold text-sm mb-2">Day Emergency Contacts</Text>
+                                                            <Text className="text-red-700 dark:text-red-400 font-bold text-sm mb-2">Day Emergency Contacts</Text>
                                                         </View>
                                                     {/* User emergency contact */}
-                                                    <View className="mb-3 bg-white rounded-lg p-3 border-l-3 border-l-red-600">
-                                                        <Text className="text-red-600 text-xs font-bold mb-2">👤 Your Personal Emergency Contact</Text>
+                                                    <View className="mb-3 bg-white dark:bg-gray-800 rounded-lg p-3 border-l-3 border-l-red-600">
+                                                        <Text className="text-red-600 dark:text-red-400 text-xs font-bold mb-2">👤 Your Personal Emergency Contact</Text>
                                                         {userEmergency ? (
                                                             <View>
-                                                                {userEmergency.name ? <Text className="text-gray-700 text-xs leading-snug">• Name: <Text className="font-bold">{userEmergency.name}</Text></Text> : null}
+                                                                {userEmergency.name ? <Text className="text-gray-700 dark:text-gray-300 text-xs leading-snug">• Name: <Text className="font-bold">{userEmergency.name}</Text></Text> : null}
                                                                 {userEmergency.phone ? (
                                                                     <TouchableOpacity onPress={() => callNumber(userEmergency.phone)}>
-                                                                        <Text className="text-gray-700 text-xs leading-snug">• Phone: <Text className="font-bold text-red-600">{userEmergency.phone}</Text></Text>
+                                                                        <Text className="text-gray-700 dark:text-gray-300 text-xs leading-snug">• Phone: <Text className="font-bold text-red-600 dark:text-red-400">{userEmergency.phone}</Text></Text>
                                                                     </TouchableOpacity>
                                                                 ) : null}
-                                                                {userEmergency.relationship ? <Text className="text-gray-500 text-xs leading-snug">• Relationship: {userEmergency.relationship}</Text> : null}
+                                                                {userEmergency.relationship ? <Text className="text-gray-500 dark:text-gray-400 text-xs leading-snug">• Relationship: {userEmergency.relationship}</Text> : null}
                                                             </View>
                                                         ) : (
                                                             <Text className="text-gray-400 text-xs">No personal emergency contact set.</Text>
@@ -488,17 +507,17 @@ export default function TourPlaning() {
                                                     </View>
 
                                                     {/* Scheduled places emergency contacts */}
-                                                    <View className="bg-white rounded-lg p-3 border-l-3 border-l-red-500">
-                                                        <Text className="text-red-600 text-xs font-bold mb-2">📍 Scheduled Places Emergency Contacts</Text>
+                                                    <View className="bg-white dark:bg-gray-800 rounded-lg p-3 border-l-3 border-l-red-500">
+                                                        <Text className="text-red-600 dark:text-red-400 text-xs font-bold mb-2">📍 Scheduled Places Emergency Contacts</Text>
                                                         {dayTasks.filter(t => t.emergency).length > 0 ? (
                                                             dayTasks.filter(t => t.emergency).map((t, idx) => (
                                                                 <View key={idx} className={`${idx < dayTasks.filter(t => t.emergency).length - 1 ? 'mb-2' : ''}`}>
-                                                                    <Text className="text-gray-900 text-xs font-bold">• {t.attraction_name || t.hotel_name || t.restaurant_name}</Text>
+                                                                    <Text className="text-gray-900 dark:text-gray-200 text-xs font-bold">• {t.attraction_name || t.hotel_name || t.restaurant_name}</Text>
                                                                     {t.emergency.split(/[;,|]/).map((line, i) => {
                                                                         const trimmed = line.trim();
                                                                         return trimmed ? (
                                                                             <TouchableOpacity key={i} onPress={() => callNumber(trimmed)}>
-                                                                                <Text className="text-gray-700 text-xs leading-tight pl-3">  - {trimmed}</Text>
+                                                                                <Text className="text-gray-700 dark:text-gray-400 text-xs leading-tight pl-3">  - {trimmed}</Text>
                                                                             </TouchableOpacity>
                                                                         ) : null;
                                                                     })}
@@ -536,12 +555,12 @@ export default function TourPlaning() {
                                         </View>
 
                                         {/* Task List */}
-                                        <View className="bg-white rounded-b-2xl">
+                                        <View className="bg-white dark:bg-gray-800 rounded-b-2xl">
                                             {dayTasks.length === 0 ? (
                                                 <View className="py-10 items-center">
                                                     <Image source={world} className="w-5 h-5"></Image>
-                                                    <Text className="text-gray-400 text-base font-medium">No stops added yet</Text>
-                                                    <Text className="text-gray-300 text-sm mt-1">Add hotels, attractions or restaurants</Text>
+                                                    <Text className="text-gray-400 dark:text-gray-500 text-base font-medium">No stops added yet</Text>
+                                                    <Text className="text-gray-300 dark:text-gray-600 text-sm mt-1">Add hotels, attractions or restaurants</Text>
                                                 </View>
                                             ) : (
                                                 dayTasks.map((t, index) => {
@@ -554,6 +573,7 @@ export default function TourPlaning() {
                                                             index={index}
                                                             dayId={date.id}
                                                             userEmergency={userEmergency}
+                                                            isDark={isDark}
                                                             onView={() => {
                                                                 if (t.hotel_name) navigation.navigate("Hotels", { hotel: t });
                                                                 else if (t.restaurant_name) navigation.navigate("Resturants", { resturant: t });
@@ -567,12 +587,12 @@ export default function TourPlaning() {
 
 
                                             {dayTasks.length > 0 && (
-                                                <View className="px-4 py-3 flex-row justify-between items-center border-t border-gray-100">
-                                                    <Text className="text-gray-400 text-xs">
+                                                <View className="px-4 py-3 flex-row justify-between items-center border-t border-gray-100 dark:border-gray-700">
+                                                    <Text className="text-gray-400 dark:text-gray-500 text-xs">
                                                         {dayTasks.length} stop{dayTasks.length !== 1 ? 's' : ''} planned
                                                     </Text>
                                                     {dayTasks.length >= 2 && (
-                                                        <Text className="text-blue-500 text-xs font-semibold">
+                                                        <Text className="text-blue-500 dark:text-blue-400 text-xs font-semibold">
                                                             {totalRouteKm(dayTasks)} km total
                                                         </Text>
                                                     )}
@@ -585,103 +605,17 @@ export default function TourPlaning() {
                             </View>
                         )
                     })}
-
-
-                    {/* Day infomation */}
-                    {/*
-                    <View className="mx-4 mb-4 flex-row items-center bg-blue-50 rounded-2xl px-4 py-3 border border-blue-100">
-                        <Image source={Calander} className="w-7 h-7" />
-                        <View className="ml-3">
-                            <Text className="text-blue-700 font-bold text-base">Day 1 — 1 Day Tour</Text>
-                            <Text className="text-blue-400 text-xs">Monday, March 15</Text>
-                        </View>
-                    </View>
-
-                    <View className="mx-4">
-                        <View className="bg-blue-700 rounded-2xl overflow-hidden" style={{ elevation: 4 }}>
-
-                            <View className="px-4 py-4 flex-row justify-between items-center">
-                                <View className="flex-row items-center">
-                                    <View className="w-14 h-14 rounded-full bg-white/25 justify-center items-center">
-                                        <Image source={calander2} className="w-9 h-9" />
-                                    </View>
-                                    <View className="ml-3">
-                                        <Text className="text-white font-bold text-xl">Day 1</Text>
-                                        <Text className="text-blue-200 text-sm">Monday, March 15</Text>
-                                    </View>
-                                </View>
-                                <TouchableOpacity onPress={() => Alert.alert("Clicked!")}>
-                                    <View className="w-10 h-10 rounded-full bg-white/25 justify-center items-center">
-                                        <Image source={Plus} className="w-5 h-5" />
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
-                            */}
-
-                    {/* Task List */}
-                    {/*
-                            <View className="bg-white rounded-b-2xl">
-                                {task.length === 0 ? (
-                                    <View className="py-10 items-center">
-                                        <Image source={world} className="w-5 h-5"></Image>
-                                        <Text className="text-gray-400 text-base font-medium">No stops added yet</Text>
-                                        <Text className="text-gray-300 text-sm mt-1">Add hotels, attractions or restaurants</Text>
-                                    </View>
-                                ) : (
-                                    task.map((t, index) => (
-                                        <View key={index} className="flex-row justify-between items-center py-4 px-4 border-b border-gray-100">
-                                            <View className="flex-row items-center flex-1 pr-2">
-                                                <View className="bg-blue-50 w-8 h-8 rounded-full justify-center items-center mr-3">
-                                                    <Text className="text-blue-600 text-xs font-bold">{index + 1}</Text>
-                                                </View>
-                                                <Text className="text-gray-900 font-bold text-base flex-1" numberOfLines={1}>
-                                                    {t.attraction_name || t.hotel_name || t.restaurant_name}
-                                                </Text>
-                                            </View>
-                                            <View className="flex-row items-center ml-2">
-                                                <TouchableOpacity
-                                                    onPress={() => {
-                                                        if (t.hotel_name) navigation.navigate("Hotels", { hotel: t });
-                                                        else if (t.restaurant_name) navigation.navigate("Resturants", { resturant: t });
-                                                        else navigation.navigate("Attraction", { place: t });
-                                                    }}
-                                                    className="bg-blue-600 rounded-xl px-3 py-2"
-                                                >
-                                                    <Text className="text-white text-xs font-bold">View</Text>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity
-                                                    onPress={() => deleteTask(index)}
-                                                    className="ml-2 bg-red-50 rounded-xl p-2"
-                                                >
-                                                    <Image source={bin} className="w-5 h-5" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    ))
-                                )}
-                            
-
-                                {task.length > 0 && (
-                                    <View className="px-4 py-3">
-                                        <Text className="text-gray-400 text-xs text-center">{task.length} stop{task.length !== 1 ? 's' : ''} planned</Text>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                    </View>
-                    */}
-
                 </ScrollView>
 
                 {/* Bottom Navigation */}
-                <View className="absolute bottom-0 w-full bg-white pt-3 pb-5 px-8 flex-row justify-between items-center border-t border-gray-100" style={{ elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 3 }}>
+                <View className="absolute bottom-0 w-full bg-white dark:bg-gray-900 pt-3 pb-5 px-8 flex-row justify-between items-center border-t border-gray-100 dark:border-gray-800" style={{ elevation: isDark ? 0 : 10, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 3 }}>
                     <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Home")}>
                         <View className="w-2 h-2 rounded-full mb-1" />
-                        <Text className="text-[13px] font-medium text-gray-400">Home</Text>
+                        <Text className="text-[13px] font-medium text-gray-400 dark:text-gray-500">Home</Text>
                     </TouchableOpacity>
                     <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Explore")}>
                         <View className="w-2 h-2 rounded-full mb-1" />
-                        <Text className="text-[13px] font-medium text-gray-400">Explore</Text>
+                        <Text className="text-[13px] font-medium text-gray-400 dark:text-gray-500">Explore</Text>
                     </TouchableOpacity>
                     <View className="items-center">
                         <View className="w-2 h-2 bg-blue-500 rounded-full mb-1" />
@@ -689,7 +623,7 @@ export default function TourPlaning() {
                     </View>
                     <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Profile")}>
                         <View className="w-2 h-2 rounded-full mb-1" />
-                        <Text className="text-[13px] font-medium text-gray-400">Profile</Text>
+                        <Text className="text-[13px] font-medium text-gray-400 dark:text-gray-500">Profile</Text>
                     </TouchableOpacity>
                 </View>
 

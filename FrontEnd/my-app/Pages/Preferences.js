@@ -5,7 +5,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import BASE_URL from '../config';
 
 export default function Preferences({ route, navigation }) {
-    const { registrationData = {} } = route.params || {};
+    const { registrationData = {}, isEditMode = false, email: editEmail = '' } = route.params || {};
 
     // Preference States
     const [travelStyle, setTravelStyle] = useState('');
@@ -101,6 +101,7 @@ export default function Preferences({ route, navigation }) {
     };
 
     const handleFinish = async () => {
+        const userEmail = isEditMode ? editEmail : registrationData.email;
         const completeProfile = {
             ...registrationData,
             preferences: {
@@ -118,8 +119,8 @@ export default function Preferences({ route, navigation }) {
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({
-                    email:registrationData.email,
-                    preferences:completeProfile.preferences
+                    email: userEmail,
+                    preferences: completeProfile.preferences
                 })
             });
             const data=await response.json();
@@ -127,7 +128,12 @@ export default function Preferences({ route, navigation }) {
                 Alert.alert("Error", data.error);
                 return;
             }
-            navigation.navigate("Home");
+            if (isEditMode) {
+                Alert.alert("Success", "Preferences updated successfully!");
+                navigation.goBack();
+            } else {
+                navigation.navigate("Home");
+            }
         }catch(err){
             Alert.alert("Error", "Could not save preferences");
         }
@@ -291,17 +297,15 @@ export default function Preferences({ route, navigation }) {
 
                 {/* Bottom Navigation Buttons */}
                 <View className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex-row items-center justify-between">
-                    {currentStep > 1 ? (
-                        <TouchableOpacity
-                            onPress={handleBack}
-                            activeOpacity={0.7}
-                            className="bg-gray-100 border border-gray-200 rounded-2xl py-4 px-6 items-center justify-center flex-1 mr-3"
-                        >
-                            <Text className="text-gray-600 text-[15px] font-bold">Back</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <View className="flex-1 mr-3" />
-                    )}
+                    <TouchableOpacity
+                        onPress={() => currentStep > 1 ? handleBack() : navigation.goBack()}
+                        activeOpacity={0.7}
+                        className="bg-gray-100 border border-gray-200 rounded-2xl py-4 px-6 items-center justify-center flex-1 mr-3"
+                    >
+                        <Text className="text-gray-600 text-[15px] font-bold">
+                            {currentStep > 1 ? "Back" : "Cancel"}
+                        </Text>
+                    </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={handleNext}
@@ -312,7 +316,7 @@ export default function Preferences({ route, navigation }) {
                         disabled={!isStepValid()}
                     >
                         <Text className="text-white text-[15px] font-bold">
-                            {currentStep === 6 ? "Complete Setup" : "Next Question"}
+                            {currentStep === 6 ? (isEditMode ? "Save Preferences" : "Complete Setup") : "Next Question"}
                         </Text>
                     </TouchableOpacity>
                 </View>
