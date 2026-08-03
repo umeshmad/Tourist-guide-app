@@ -18,6 +18,7 @@ import Place2 from '../assets/place2.jpg';
 import BASE_URL from '../config';
 import rest from '../assets/rest.png';
 import Resturants from './Resturants';
+import {isLocationEnable} from './locationPref';
 
 
 export default function Search() {
@@ -27,7 +28,7 @@ export default function Search() {
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
     const [search, setsearch] = useState();
-    const [searchResults, setSearchResults] = useState([]);
+    const [searchResults, setSearchResults] = useState({ attractions: [], hotels: [], restaurants: [] });
     const [userLocation, setUserLocation] = useState(null);
     const [hotels, setHotels] = useState();
     const [hotelSearchResult, setHotelSearchResult] = useState(null);
@@ -38,10 +39,10 @@ export default function Search() {
     const fetchSearchResults = async (query) => {
         try {
             if (!query) {
-                setSearchResults([]);
+                setSearchResults({ attractions: [], hotels: [], restaurants: [] });
                 return;
             }
-            const res = await fetch(`${BASE_URL}/search?q=${query}`);
+            const res = await fetch(`${BASE_URL}/Search/All?q=${query}`);
             const data = await res.json();
             setSearchResults(data);
         } catch (err) {
@@ -50,6 +51,18 @@ export default function Search() {
     };
     const fetchHotelsNearMe = async () => {
         try {
+            const Enable=await isLocationEnable();
+            if(!Enable){
+                Alert.alert(
+                    "Location Service off",
+                    "Turn on Location Services in Permissions & Privacy to find hotels near you.",
+                    [
+                        {text:"Cancel", style:"cancel"},
+                        {text:"Go to Settings", onPress:()=>navigation.navigate("AppSettings")}
+                    ]
+                );
+                return;
+            }
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 Alert.alert("Permission Denied", "Allow location access to find hotels near you.");
@@ -64,6 +77,41 @@ export default function Search() {
             const data = await res.json();
 
             navigation.navigate("Hotels", { hotels: data, dayID })
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchResturantsNearMe = async () => {
+        try {
+            const Enable=await isLocationEnable();
+            if(!Enable){
+                Alert.alert(
+                    "Location Service off",
+                    "Turn on Location Services in Permissions & Privacy to find restaurants near you.",
+                    [
+                        {text:"Cancel", style:"cancel"},
+                        {text:"Go to Settings", onPress:()=>navigation.navigate("AppSettings")}
+                    ]
+                );
+                return;
+            }
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert("Permission Denied", "Allow location access to find hotels near you.");
+                return;
+            }
+            setLoading(true);
+            const locationData = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+            const { longitude, latitude } = locationData.coords;
+            setUserLocation({ longitude, latitude });
+
+            const res = await fetch(`${BASE_URL}/Resturants/nearby?longitude=${longitude}&latitude=${latitude}`);
+            const data = await res.json();
+
+            navigation.navigate("Resturants", { resturant: data, dayID })
         } catch (err) {
             console.error(err);
         } finally {
@@ -118,17 +166,59 @@ export default function Search() {
                 </View>
 
                 {/* Search Results */}
-                {searchResults.length > 0 && (
-                    <ScrollView className="px-5 mt-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 mx-5 absolute top-36 z-50 w-[87%]"
-                        style={{ maxHeight: 200, elevation: isDark ? 0 : 8 }}>
-                        {searchResults.map((place, index) => (
-                            <View
-                                key={index}
-                                className="border-b border-gray-100 dark:border-gray-700 py-3 px-1"
-                            >
-                                <Text className="text-gray-800 dark:text-gray-200 text-base font-medium">{place.attraction_name}</Text>
+                {(searchResults.attractions?.length > 0 || searchResults.hotels?.length > 0 || searchResults.restaurants?.length > 0) && (
+                    <ScrollView
+                        className="px-2 mt-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 mx-5 absolute top-36 z-50 w-[87%]"
+                        style={{ maxHeight: 280, elevation: isDark ? 0 : 8 }}
+                        keyboardShouldPersistTaps="handled">
+
+                        {searchResults.attractions?.length > 0 && (
+                            <View className="px-3 pt-2">
+                                <Text className="text-xs font-bold text-rose-500 uppercase mb-1">Places</Text>
+                                {searchResults.attractions.map((place, index) => (
+                                    <TouchableOpacity
+                                        key={`a-${index}`}
+                                        onPress={() => navigation.navigate("Attraction", { place, dayID })}
+                                        className="border-b border-gray-100 dark:border-gray-700 py-2.5"
+                                    >
+                                        <Text className="text-gray-800 dark:text-gray-200 text-base font-medium">{place.attraction_name}</Text>
+                                        <Text className="text-gray-400 text-xs">{place.city}</Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
-                        ))}
+                        )}
+
+                        {searchResults.hotels?.length > 0 && (
+                            <View className="px-3 pt-2">
+                                <Text className="text-xs font-bold text-blue-500 uppercase mb-1">Hotels</Text>
+                                {searchResults.hotels.map((hotel, index) => (
+                                    <TouchableOpacity
+                                        key={`h-${index}`}
+                                        onPress={() => navigation.navigate("Hotels", { hotels: [hotel], dayID })}
+                                        className="border-b border-gray-100 dark:border-gray-700 py-2.5"
+                                    >
+                                        <Text className="text-gray-800 dark:text-gray-200 text-base font-medium">{hotel.hotel_name}</Text>
+                                        <Text className="text-gray-400 text-xs">{hotel.nearest_cities}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+
+                        {searchResults.restaurants?.length > 0 && (
+                            <View className="px-3 pt-2 pb-2">
+                                <Text className="text-xs font-bold text-emerald-500 uppercase mb-1">Food</Text>
+                                {searchResults.restaurants.map((r, index) => (
+                                    <TouchableOpacity
+                                        key={`r-${index}`}
+                                        onPress={() => navigation.navigate("Resturants", { resturant: [r], dayID })}
+                                        className="border-b border-gray-100 dark:border-gray-700 py-2.5"
+                                    >
+                                        <Text className="text-gray-800 dark:text-gray-200 text-base font-medium">{r.restaurant_name}</Text>
+                                        <Text className="text-gray-400 text-xs">{r.cuisine_type} · {r.city}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </ScrollView>
                 )}
 
@@ -191,53 +281,51 @@ export default function Search() {
 
                     {/* Recent Searches */}
                     <View className="px-5 pt-6">
-                        <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">Recent Searches</Text>
+                        <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">Explore Quickly</Text>
                     </View>
 
                     <View className="px-5">
-                        <TouchableOpacity onPress={fetchHotelsNearMe}>
-                            <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3 mb-3"
-                                style={{ elevation: isDark ? 0 : 2 }}>
-                                <View className="bg-blue-50 dark:bg-blue-900/30 rounded-xl w-10 h-10 justify-center items-center">
-                                    <Image source={Sleep} className="h-5 w-5" />
+                        <View className="flex-row flex-wrap justify-between">
+                            <TouchableOpacity onPress={fetchHotelsNearMe} className="w-[48%] mb-3">
+                                <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3"
+                                    style={{ elevation: isDark ? 0 : 2 }}>
+                                    <View className="bg-blue-50 dark:bg-blue-900/30 rounded-xl w-10 h-10 justify-center items-center">
+                                        <Image source={Sleep} className="h-5 w-5" />
+                                    </View>
+                                    <Text className="text-gray-800 dark:text-gray-200 text-[15px] pl-3 font-medium flex-1">Hotels near me</Text>
                                 </View>
-                                <Text className="text-gray-800 dark:text-gray-200 text-[15px] pl-3 font-medium flex-1">Hotels near me</Text>
-                                <Text className="text-gray-300 dark:text-gray-600 text-lg">›</Text>
-                            </View>
-                        </TouchableOpacity>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity>
-                            <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3 mb-3"
-                                style={{ elevation: isDark ? 0 : 2 }}>
-                                <View className="bg-emerald-50 dark:bg-emerald-900/30 rounded-xl w-10 h-10 justify-center items-center">
-                                    <Image source={Hiking} className="h-5 w-5" />
+                            <TouchableOpacity onPress={() => navigation.navigate("Attraction", { dayID })} className="w-[48%] mb-3">
+                                <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3"
+                                    style={{ elevation: isDark ? 0 : 2 }}>
+                                    <View className="bg-emerald-50 dark:bg-emerald-900/30 rounded-xl w-10 h-10 justify-center items-center">
+                                        <Image source={Locationping} className="h-5 w-5" />
+                                    </View>
+                                    <Text className="text-gray-800 dark:text-gray-200 text-[15px] pl-3 font-medium flex-1">Attractions near me</Text>
                                 </View>
-                                <Text className="text-gray-800 dark:text-gray-200 text-[15px] pl-3 font-medium flex-1">Tours near me</Text>
-                                <Text className="text-gray-300 dark:text-gray-600 text-lg">›</Text>
-                            </View>
-                        </TouchableOpacity>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity onPress={fetchItalianResturants}>
-                            <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3 mb-3"
-                                style={{ elevation: isDark ? 0 : 2 }}>
-                                <View className="bg-orange-50 dark:bg-orange-900/30 rounded-xl w-10 h-10 justify-center items-center">
-                                    <Image source={Resturant} className="h-5 w-5" />
+                            <TouchableOpacity onPress={fetchResturantsNearMe} className="w-[48%] mb-3">
+                                <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3"
+                                    style={{ elevation: isDark ? 0 : 2 }}>
+                                    <View className="bg-orange-50 dark:bg-orange-900/30 rounded-xl w-10 h-10 justify-center items-center">
+                                        <Image source={Resturant} className="h-5 w-5" />
+                                    </View>
+                                    <Text className="text-gray-800 dark:text-gray-200 text-[15px] pl-3 font-medium flex-1">Restaurants near me</Text>
                                 </View>
-                                <Text className="text-gray-800 dark:text-gray-200 text-[15px] pl-3 font-medium flex-1">Italian Restaurants</Text>
-                                <Text className="text-gray-300 dark:text-gray-600 text-lg">›</Text>
-                            </View>
-                        </TouchableOpacity>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => navigation.navigate("PhotoSpots", { dayID })}>
-                            <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3 mb-3"
-                                style={{ elevation: isDark ? 0 : 2 }}>
-                                <View className="bg-violet-50 dark:bg-violet-900/30 rounded-xl w-10 h-10 justify-center items-center">
-                                    <Image source={Camara} className="h-5 w-5" />
+                            <TouchableOpacity onPress={() => navigation.navigate("PhotoSpots", { dayID })} className="w-[48%] mb-3">
+                                <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3"
+                                    style={{ elevation: isDark ? 0 : 2 }}>
+                                    <View className="bg-violet-50 dark:bg-violet-900/30 rounded-xl w-10 h-10 justify-center items-center">
+                                        <Image source={Camara} className="h-5 w-5" />
+                                    </View>
+                                    <Text className="text-gray-800 dark:text-gray-200 text-[15px] pl-3 font-medium flex-1">Photography spots</Text>
                                 </View>
-                                <Text className="text-gray-800 dark:text-gray-200 text-[15px] pl-3 font-medium flex-1">Photography spots</Text>
-                                <Text className="text-gray-300 dark:text-gray-600 text-lg">›</Text>
-                            </View>
-                        </TouchableOpacity>
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     {/* Suggested For You */}

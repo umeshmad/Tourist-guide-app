@@ -162,7 +162,8 @@ const FESTIVAL_DATA = [
 
 const proxyImage = (rawUrl) => {
     if (!rawUrl) return null;
-    return rawUrl.replace(/^"|"$/g, '').trim();
+    const url = rawUrl.replace(/^"|"$/g, '').trim();
+    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=400`;
 };
 
 export default function Festivals({ navigation }) {
@@ -329,41 +330,41 @@ export default function Festivals({ navigation }) {
                                             <View className="h-px bg-slate-200 dark:bg-slate-700 my-4" />
 
                                             <View>
-                                             <View className="flex-row items-center mb-2.5">
-                                                 <Image source={locationIcon} className="w-3.5 h-3.5 mr-2" resizeMode="contain" />
-                                                 <Text className="text-slate-950 dark:text-white font-bold text-[13px]">Nearby Attraction places</Text>
-                                             </View>
+                                                <View className="flex-row items-center mb-2.5">
+                                                    <Image source={locationIcon} className="w-3.5 h-3.5 mr-2" resizeMode="contain" />
+                                                    <Text className="text-slate-950 dark:text-white font-bold text-[13px]">Nearby Attraction places</Text>
+                                                </View>
 
-                                             {nearbyLoading[fest.id] ? (
-                                                 <ActivityIndicator size="large" color="#f87171" className="my-6" />
-                                             ) : (
-                                                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                                     <View className="flex-row py-3 px-6 -ml-6">
-                                                         {(nearbymap[fest.id] && nearbymap[fest.id].length > 0) ? nearbymap[fest.id].map((attraction, i) => (
-                                                             <View key={i} className="pl-6">
-                                                                 <View className="bg-white dark:bg-gray-800 h-80 w-64 rounded-xl overflow-hidden relative border border-gray-100 dark:border-gray-700">
-                                                                     <Image source={{ uri: proxyImage(attraction.image_url) }} className="w-full h-36" />
-                                                                     <View className="left-0 right-0 top-[50%] bg-white dark:bg-gray-800 rounded-b-xl bottom-0 absolute">
-                                                                         <Text className="text-black dark:text-white text-l font-bold pt-2 pl-4">{attraction.attraction_name}</Text>
-                                                                         <View className="flex-row py-2 pl-4">
-                                                                             <Image source={star} className="h-4 w-4" />
-                                                                             <Text className="text-sm font-medium text-black dark:text-white pl-2">{attraction.rating}</Text>
-                                                                             {attraction.distanceKm != null && (
-                                                                                 <Text className="text-sm font-medium text-gray-400 pl-2">• {attraction.distanceKm} km away</Text>
-                                                                             )}
-                                                                         </View>
-                                                                         <ScrollView style={{ maxHeight: 90 }} showsVerticalScrollIndicator={true}>
-                                                                             <Text className="text-sm font-medium text-gray-400 px-4">{attraction.description}</Text>
-                                                                         </ScrollView>
-                                                                     </View>
-                                                                 </View>
-                                                             </View>
-                                                         )) : (
-                                                             <Text className="text-gray-400 text-sm">No attraction details found.</Text>
-                                                         )}
-                                                     </View>
-                                                 </ScrollView>
-                                             )}
+                                                {nearbyLoading[fest.id] ? (
+                                                    <ActivityIndicator size="large" color="#f87171" className="my-6" />
+                                                ) : (
+                                                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                        <View className="flex-row py-3 px-6 -ml-6">
+                                                            {(nearbymap[fest.id] && nearbymap[fest.id].length > 0) ? nearbymap[fest.id].map((attraction, i) => (
+                                                                <View key={i} className="pl-6">
+                                                                    <View className="bg-white dark:bg-gray-800 h-80 w-64 rounded-xl overflow-hidden relative border border-gray-100 dark:border-gray-700">
+                                                                        <Image source={{ uri: proxyImage(attraction.image_url) }} className="w-full h-36" />
+                                                                        <View className="left-0 right-0 top-[50%] bg-white dark:bg-gray-800 rounded-b-xl bottom-0 absolute">
+                                                                            <Text className="text-black dark:text-white text-l font-bold pt-2 pl-4">{attraction.attraction_name}</Text>
+                                                                            <View className="flex-row py-2 pl-4">
+                                                                                <Image source={star} className="h-4 w-4" />
+                                                                                <Text className="text-sm font-medium text-black dark:text-white pl-2">{attraction.rating}</Text>
+                                                                                {attraction.distanceKm != null && (
+                                                                                    <Text className="text-sm font-medium text-gray-400 pl-2">• {attraction.distanceKm} km away</Text>
+                                                                                )}
+                                                                            </View>
+                                                                            <ScrollView style={{ maxHeight: 90 }} showsVerticalScrollIndicator={true}>
+                                                                                <Text className="text-sm font-medium text-gray-400 px-4">{attraction.description}</Text>
+                                                                            </ScrollView>
+                                                                        </View>
+                                                                    </View>
+                                                                </View>
+                                                            )) : (
+                                                                <Text className="text-gray-400 text-sm">No attraction details found.</Text>
+                                                            )}
+                                                        </View>
+                                                    </ScrollView>
+                                                )}
                                             </View>
                                         </View>
                                     )}

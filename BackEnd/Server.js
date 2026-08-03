@@ -145,6 +145,71 @@ app.get("/Hotels/nearby", async (req, res) => {
   }
 });
 
+app.get("/Resturants/nearby", async (req, res) => {
+  try {
+    //both 'latitude/longitude' AND 'lat/lon'
+    const lat = req.query.latitude || req.query.lat;
+    const lon = req.query.longitude || req.query.lon;
+    const radius = req.query.radius || 10;
+
+    if (!lat || !lon) {
+      return res.json([]);
+    }
+
+    const userLat = parseFloat(lat);
+    const userLon = parseFloat(lon);
+    const maxRadius = parseFloat(radius);
+
+    const allresturant = await db.collection("Resturants").find({}).toArray();
+
+    const nearby = allresturant
+      .map((resturant) => ({
+        ...resturant,
+        distanceKm: (getdistancekm(userLat, userLon, resturant.latitude, resturant.longitude).toFixed(2))
+      }))
+      .filter((resturant) => resturant.distanceKm <= maxRadius)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+
+    res.json(nearby);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+app.get("/Attractions/nearby", async (req, res) => {
+  try {
+    //both 'latitude/longitude' AND 'lat/lon'
+    const lat = req.query.latitude || req.query.lat;
+    const lon = req.query.longitude || req.query.lon;
+    const radius = req.query.radius || 10;
+
+    if (!lat || !lon) {
+      return res.json([]);
+    }
+
+    const userLat = parseFloat(lat);
+    const userLon = parseFloat(lon);
+    const maxRadius = parseFloat(radius);
+
+    const allAttraction = await db.collection("Attraction_places").find({}).toArray();
+
+    const nearby = allAttraction
+      .map((attraction) => ({
+        ...hotel,
+        distanceKm: (getdistancekm(userLat, userLon, attraction.latitude, attraction.longitude).toFixed(2))
+      }))
+      .filter((attraction) => attraction.distanceKm <= maxRadius)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+
+    res.json(nearby);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+
 app.get("/Attraction/Names", async (req, res) => {
   try {
     const query = req.query.names?.trim();

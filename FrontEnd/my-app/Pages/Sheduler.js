@@ -449,7 +449,7 @@ export default function TourPlaning() {
                                 </View>
 
                                 <View className="mx-4">
-                                    <View className="bg-blue-700 dark:bg-gray-800 border dark:border-gray-700 rounded-2xl overflow-hidden" style={{ elevation: isDark ? 0 : 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 }}>
+                                    <View className="bg-blue-700 dark:bg-gray-800 border-0 dark:border-gray-700 rounded-2xl overflow-hidden" style={{ elevation: isDark ? 0 : 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 }}>
 
                                         <View className="px-4 py-4">
                                             {/* Day header row */}

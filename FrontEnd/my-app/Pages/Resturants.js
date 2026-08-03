@@ -24,8 +24,8 @@ export default function Resturants() {
     const [expand, setExpand] = useState(null);
     const navigation = useNavigation();
     const [nearby, setNearBy] = useState([]);
-    const [slotModelFor,setSlotModelFor]=useState(null);
-    const [selectedSlot, setSelectedSlot]=useState({});
+    const [slotModelFor, setSlotModelFor] = useState(null);
+    const [selectedSlot, setSelectedSlot] = useState({});
 
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -53,7 +53,8 @@ export default function Resturants() {
 
     const proxyImage = (rawUrl) => {
         if (!rawUrl) return null;
-        return rawUrl.replace(/^"|"$/g, '').trim();
+        const url = rawUrl.replace(/^"|"$/g, '').trim();
+        return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=400`;
     };
 
     useEffect(() => {
@@ -117,18 +118,18 @@ export default function Resturants() {
         }
     };
 
-    const Attraction_Slots=[
-        {key:'BreakFast',label:'Breakfast'},
-        {key:'Lunch',label:'Lunch'},
-        {key:'Dinner',label:'Dinner'}
+    const Attraction_Slots = [
+        { key: 'BreakFast', label: 'Breakfast' },
+        { key: 'Lunch', label: 'Lunch' },
+        { key: 'Dinner', label: 'Dinner' }
     ];
 
-    const openSlotPicker=(resturant,index)=>setSlotModelFor({resturant,index});
-    const confermSlot=(slotKey)=>{
-        const{resturant,index}=slotModelFor;
-        setSelectedSlot(prev=>({...prev,[index]:slotKey}));
+    const openSlotPicker = (resturant, index) => setSlotModelFor({ resturant, index });
+    const confermSlot = (slotKey) => {
+        const { resturant, index } = slotModelFor;
+        setSelectedSlot(prev => ({ ...prev, [index]: slotKey }));
         setSlotModelFor(null);
-        addToTasks({...resturant,slot:slotKey})
+        addToTasks({ ...resturant, slot: slotKey })
     }
 
     return (
@@ -227,7 +228,7 @@ export default function Resturants() {
                                     <View className="px-4 py-3 flex-row items-center justify-between">
                                         <View className="flex-1 pr-3">
                                             <Text className="text-gray-900 dark:text-white text-base font-bold" numberOfLines={1}>{resturant.restaurant_name}</Text>
-                                            <Text className="text-gray-400 text-xs mt-0.5">{resturant.amenity_type} • {resturant.cuisine_type}</Text>
+                                            <Text className="text-gray-400 text-xs mt-0.5">{resturant.amenity_type} • {resturant.cuisine_type}{resturant.distanceKm ? ` • ${resturant.distanceKm} km away` : ''}</Text>
                                             <Text className="text-gray-300 dark:text-gray-500 text-xs mt-0.5">({resturant.review_count} reviews)</Text>
                                         </View>
                                         <View className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-500 rounded-xl px-3 py-1.5">
@@ -269,7 +270,7 @@ export default function Resturants() {
 
                                         <View className="flex-row items-center mt-2">
                                             <Image source={location} className="h-4 w-4" />
-                                            <Text className="text-sm text-gray-500 dark:text-gray-400 pl-2">{resturant.address}, {resturant.city}, {resturant.district}, {resturant.province}</Text>
+                                            <Text className="text-sm text-gray-500 dark:text-gray-400 pl-2">{resturant.address}, {resturant.city}, {resturant.district}, {resturant.province}{resturant.distanceKm ? ` • ${resturant.distanceKm} km away` : ''}</Text>
                                         </View>
 
                                         {resturant.vegetarian_friendly === 'Yes' && (
@@ -282,28 +283,30 @@ export default function Resturants() {
 
                                         <View className="h-[1px] bg-gray-200 dark:bg-gray-700 my-4" />
 
-                                        <View className="flex-row flex-wrap border-t border-b border-gray-100 dark:border-gray-700 py-3">
-                                            {resturant.opening_hours ? (
-                                                <View className="w-full my-1 flex-row items-center">
-                                                    <Text className="text-gray-400 text-xs font-semibold mr-1">Hours:</Text>
-                                                    <Text className="text-gray-700 dark:text-gray-300 text-xs font-bold flex-1">{resturant.opening_hours}</Text>
-                                                </View>
-                                            ) : null}
-                                            {resturant.phone ? (
-                                                <View className="w-full my-1 flex-row items-center">
-                                                    <Text className="text-gray-400 text-xs font-semibold mr-1">Phone:</Text>
-                                                    <Text className="text-gray-700 dark:text-gray-300 text-xs font-bold">{resturant.phone}</Text>
-                                                </View>
-                                            ) : null}
-                                            {resturant.website ? (
-                                                <View className="w-full my-1 flex-row items-center">
-                                                    <Text className="text-gray-400 text-xs font-semibold mr-1">Website:</Text>
-                                                    <TouchableOpacity onPress={() => Linking.openURL(resturant.website)}>
-                                                        <Text className="text-orange-500 dark:text-orange-400 text-xs font-bold" numberOfLines={1}>{resturant.website}</Text>
-                                                    </TouchableOpacity>
-                                                </View>
-                                            ) : null}
-                                        </View>
+                                        {(resturant.opening_hours || resturant.phone || resturant.website) && (
+                                            <View className="flex-row flex-wrap py-3">
+                                                {resturant.opening_hours ? (
+                                                    <View className="w-full my-1 flex-row items-center">
+                                                        <Text className="text-gray-400 text-xs font-semibold mr-1">Hours:</Text>
+                                                        <Text className="text-gray-700 dark:text-gray-300 text-xs font-bold flex-1">{resturant.opening_hours}</Text>
+                                                    </View>
+                                                ) : null}
+                                                {resturant.phone ? (
+                                                    <View className="w-full my-1 flex-row items-center">
+                                                        <Text className="text-gray-400 text-xs font-semibold mr-1">Phone:</Text>
+                                                        <Text className="text-gray-700 dark:text-gray-300 text-xs font-bold">{resturant.phone}</Text>
+                                                    </View>
+                                                ) : null}
+                                                {resturant.website ? (
+                                                    <View className="w-full my-1 flex-row items-center">
+                                                        <Text className="text-gray-400 text-xs font-semibold mr-1">Website:</Text>
+                                                        <TouchableOpacity onPress={() => Linking.openURL(resturant.website)}>
+                                                            <Text className="text-orange-500 dark:text-orange-400 text-xs font-bold" numberOfLines={1}>{resturant.website}</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ) : null}
+                                            </View>
+                                        )}
 
                                         {nearby.length > 0 && (
                                             <View className="mt-4">
@@ -337,7 +340,7 @@ export default function Resturants() {
                                             <TouchableOpacity onPress={() => openMap(resturant.google_maps_link)} className="flex-1 border border-orange-500 rounded-3xl py-3 mr-2 justify-center items-center">
                                                 <Text className="text-orange-500 text-l font-bold">Map</Text>
                                             </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => openSlotPicker(resturant,index)} className="flex-1 bg-orange-500 rounded-3xl py-3 ml-2 justify-center items-center">
+                                            <TouchableOpacity onPress={() => openSlotPicker(resturant, index)} className="flex-1 bg-orange-500 rounded-3xl py-3 ml-2 justify-center items-center">
                                                 <Text className="text-white text-l font-bold">+ Add to Plan</Text>
                                             </TouchableOpacity>
                                         </View>
@@ -351,19 +354,19 @@ export default function Resturants() {
                 />
 
             </SafeAreaView>
-            <Modal visible={!!slotModelFor} transparent animationType='fade' onRequestClose={()=>setSlotModelFor(null)}>
+            <Modal visible={!!slotModelFor} transparent animationType='fade' onRequestClose={() => setSlotModelFor(null)}>
                 <View className="flex-1 bg-black/40 justify-center items-center">
                     <View className="bg-white dark:bg-gray-800 rounded-2xl p-5 w-72">
                         <Text className="text-gray-900 dark:text-white font-bold text-base mb-3">When is this for?</Text>
-                        {Attraction_Slots.map((s)=>(
+                        {Attraction_Slots.map((s) => (
                             <TouchableOpacity key={s.key} onPress={() => confermSlot(s.key)} className="flex-row items-center py-2.5">
                                 <View className="w-5 h-5 rounded-full border-2 border-orange-400 mr-3" />
                                 <Text className="text-gray-700 dark:text-gray-300 text-sm">{s.label}</Text>
                             </TouchableOpacity>
                         ))}
-                            <TouchableOpacity onPress={() => setSlotModelFor(null)} className="mt-2">
-                                <Text className="text-gray-400 text-xs text-center">Cancel</Text>
-                             </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setSlotModelFor(null)} className="mt-2">
+                            <Text className="text-gray-400 text-xs text-center">Cancel</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>

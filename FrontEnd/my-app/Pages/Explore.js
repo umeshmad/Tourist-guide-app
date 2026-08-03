@@ -19,6 +19,7 @@ import KandyEsalaPerahera from '../assets/KandyEsalaPerahera.jpg';
 import VesakFestival from '../assets/VesakFestival.jpg';
 import SinhalaTamilNewYear from '../assets/SinhalaTamilNewYear.jpg';
 import KatharagamaFestival from '../assets/KatharagamaFestival.jpg';
+import Camara from '../assets/wireless.png';
 import BASE_URL from "../config";
 const RECOMMENDED = [
     {
@@ -224,8 +225,8 @@ export default function Explore() {
                             style={{ elevation: isDark ? 0 : 3 }}
                             onPress={() => navigation.navigate("PhotoSpots")}
                         >
-                            <Image source={Hiking} className="w-8 h-8 mb-1.5" resizeMode="contain" />
-                            <Text className="text-gray-600 dark:text-gray-400 font-medium text-xs">Tours</Text>
+                            <Image source={Camara} className="w-10 h-10 mb-1.5" resizeMode="contain" />
+                            <Text className="text-gray-600 dark:text-gray-400 font-medium text-xs">PhotoSpots</Text>
                         </TouchableOpacity>
 
                     </View>

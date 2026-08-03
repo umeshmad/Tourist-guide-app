@@ -29,7 +29,7 @@ export default function EditProfile() {
     return (
         <SafeAreaProvider>
             <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={['top', 'left', 'right']}>
-                <KeyboardAvoidingView 
+                <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={{ flex: 1 }}
                 >
@@ -49,7 +49,7 @@ export default function EditProfile() {
                         <View className="items-center mt-8 mb-6">
                             <View className="relative">
                                 <Image source={Women} className="w-28 h-28 rounded-full" />
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     className="absolute bottom-0 right-0 bg-blue-500 w-8 h-8 rounded-full justify-center items-center border-2 border-white dark:border-gray-900"
                                     style={{ elevation: isDark ? 0 : 2 }}
                                 >
@@ -80,7 +80,7 @@ export default function EditProfile() {
                                     placeholderTextColor={isDark ? '#9CA3AF' : '#D1D5DB'}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
-                                    editable={false} // Usually email isn't directly editable without verification
+                                    editable={false}
                                     className="bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3.5 text-gray-500 dark:text-gray-400 text-[15px]"
                                 />
                                 <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-1">Email cannot be changed directly.</Text>
@@ -152,7 +152,7 @@ export default function EditProfile() {
                             <View className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                                 <Text className="text-base font-bold text-gray-900 dark:text-white mb-2">Travel Preferences</Text>
                                 <Text className="text-xs text-gray-500 dark:text-gray-400 mb-4">Update the travel preferences you set during registration to get better recommendations.</Text>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={() => navigation.navigate('Preferences', { isEditMode: true, email: email })}
                                     className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-2xl py-3.5 items-center justify-center"
                                 >

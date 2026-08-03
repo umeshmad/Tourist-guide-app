@@ -20,6 +20,9 @@ import Resturants from './Pages/Resturants';
 import PhotoSpots from './Pages/PhotoSpots';
 import EditProfile from './Pages/EditProfile';
 import AppSettings from './Pages/AppSettings';
+
+import ContactSupport from './Pages/ContactSupport';
+import TermsPrivacy from './Pages/TermsPrivacy';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -69,6 +72,9 @@ export default function App() {
         <Stack.Screen name="PhotoSpots" component={PhotoSpots}/>
         <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }}/>
         <Stack.Screen name="AppSettings" component={AppSettings} options={{ headerShown: false }}/>
+
+        <Stack.Screen name="ContactSupport" component={ContactSupport} options={{ headerShown: false }}/>
+        <Stack.Screen name="TermsPrivacy" component={TermsPrivacy} options={{ headerShown: false }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

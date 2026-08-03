@@ -26,7 +26,8 @@ import '../global.css';
 
 const proxyImage = (rawUrl) => {
     if (!rawUrl) return null;
-    return rawUrl.replace(/^"|"$/g, '').trim();
+    const url = rawUrl.replace(/^"|"$/g, '').trim();
+    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=400`;
 };
 
 const parseAttractionPlaces = (str) => {
@@ -47,11 +48,11 @@ const fetaturesIcon = {
     "Heritage Property": cultural,
 };
 
-const Hotel_SLots=[
-    {key:'All Day', label:'All-Day'},
-    {key:'Breakfast', label:'breakfast'},
-    {key:'Lunch',label:'lunch'},
-    {key:'Dinner',label:'Dinner'}
+const Hotel_SLots = [
+    { key: 'All Day', label: 'All-Day' },
+    { key: 'Breakfast', label: 'breakfast' },
+    { key: 'Lunch', label: 'lunch' },
+    { key: 'Dinner', label: 'Dinner' }
 ]
 
 export default function Hotel() {
@@ -66,9 +67,9 @@ export default function Hotel() {
     const [originalHotels, setOriginalHotels] = useState([]);
     const navigation = useNavigation();
     const singleHotel = Route.params?.hotel;
-    const [slotModelFor,setSlotModelFor]=useState(null);
-    const [selectedSlot, setSelectedSlot]=useState({});
-    const getSlot=(index)=>selectedSlot[index]||'All Day'
+    const [slotModelFor, setSlotModelFor] = useState(null);
+    const [selectedSlot, setSelectedSlot] = useState({});
+    const getSlot = (index) => selectedSlot[index] || 'All Day'
 
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -163,7 +164,7 @@ export default function Hotel() {
 
             const hotelExists = tasks.some(t => t.hotel_name === hotel.hotel_name);
             if (!hotelExists) {
-                tasks.push({...hotel, slot: getSlot(index)});
+                tasks.push({ ...hotel, slot: getSlot(index) });
             }
             const attractions = nearbymap[index] || [];
             attractions.forEach(attr => {
@@ -180,13 +181,13 @@ export default function Hotel() {
         }
     };
 
-    const openSlotPicker=(hotel,index)=>setSlotModelFor({hotel,index});
+    const openSlotPicker = (hotel, index) => setSlotModelFor({ hotel, index });
 
-    const confermSlot=(slotKey)=>{
-        const {hotel,index}=slotModelFor;
-        setSelectedSlot(prev=>({...prev,[index]:slotKey}))
+    const confermSlot = (slotKey) => {
+        const { hotel, index } = slotModelFor;
+        setSelectedSlot(prev => ({ ...prev, [index]: slotKey }))
         setSlotModelFor(null);
-        addHotel({...hotel, slot:slotKey});
+        addHotel({ ...hotel, slot: slotKey });
     }
 
     return (
@@ -301,7 +302,7 @@ export default function Hotel() {
                                                     </View>
                                                 </View>
                                                 <TouchableOpacity
-                                                    onPress={() => openSlotPicker(hotel,index)}
+                                                    onPress={() => openSlotPicker(hotel, index)}
                                                     className="bg-red-400 rounded-xl px-4 py-2"
                                                 >
                                                     <Text className="text-white text-xs font-bold">+ Add</Text>
@@ -362,7 +363,7 @@ export default function Hotel() {
                                             </View>
 
                                             <View className="flex items-end px-3">
-                                                <TouchableOpacity onPress={() => openSlotPicker(hotel,index)} className="bg-red-400 rounded-3xl translate-y-2 border border-red-500 h-12 w-32 flex justify-center items-center">
+                                                <TouchableOpacity onPress={() => openSlotPicker(hotel, index)} className="bg-red-400 rounded-3xl translate-y-2 border border-red-500 h-12 w-32 flex justify-center items-center">
                                                     <Text className="text-xl font-bold text-white">Select</Text>
                                                 </TouchableOpacity>
                                             </View>
@@ -416,11 +417,11 @@ export default function Hotel() {
                 )}
 
             </SafeAreaView>
-            <Modal visible={!!slotModelFor} transparent animationType='fade' onRequestClose={()=>setSlotModelFor(null)}>
+            <Modal visible={!!slotModelFor} transparent animationType='fade' onRequestClose={() => setSlotModelFor(null)}>
                 <View className="flex-1 bg-black/40 justify-center items-center">
                     <View className="bg-white dark:bg-gray-800 rounded-2xl p-5 w-72">
                         <Text className="text-gray-900 dark:text-white font-bold text-base mb-3">When is this for?</Text>
-                        {Hotel_SLots.map((s)=>(
+                        {Hotel_SLots.map((s) => (
                             <TouchableOpacity key={s.key} onPress={() => confermSlot(s.key)} className="flex-row items-center py-2.5">
                                 <View className="w-5 h-5 rounded-full border-2 border-red-400 mr-3" />
                                 <Text className="text-gray-700 dark:text-gray-300 text-sm">{s.label}</Text>
@@ -433,6 +434,6 @@ export default function Hotel() {
                 </View>
             </Modal>
         </SafeAreaProvider>
-        
+
     );
 }

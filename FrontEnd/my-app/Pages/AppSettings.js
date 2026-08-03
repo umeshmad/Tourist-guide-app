@@ -11,24 +11,21 @@ export default function AppSettings() {
     const navigation = useNavigation();
     const { colorScheme, setColorScheme } = useColorScheme();
     const isDarkTheme = colorScheme === 'dark';
-    
-    // Settings State
+
     const [loading, setLoading] = useState(true);
-    const [pushNotifications, setPushNotifications] = useState(true);
     const [locationServices, setLocationServices] = useState(true);
     const [currency, setCurrency] = useState('USD ($)');
-    
+
     // Dynamic Route Recommendations
     const [searchRadius, setSearchRadius] = useState(10); // in km
 
-    // Load settings from AsyncStorage on mount
+    // Load settings
     useEffect(() => {
         const loadSettings = async () => {
             try {
                 const savedSettings = await AsyncStorage.getItem('appSettings');
                 if (savedSettings) {
                     const parsed = JSON.parse(savedSettings);
-                    if (parsed.pushNotifications !== undefined) setPushNotifications(parsed.pushNotifications);
                     if (parsed.locationServices !== undefined) setLocationServices(parsed.locationServices);
                     if (parsed.currency) setCurrency(parsed.currency);
                     if (parsed.searchRadius) setSearchRadius(parsed.searchRadius);
@@ -42,13 +39,12 @@ export default function AppSettings() {
         loadSettings();
     }, []);
 
-    // Save settings whenever they change
+    // Save settings
     useEffect(() => {
-        if (loading) return; // Don't save while initially loading
+        if (loading) return;
         const saveSettings = async () => {
             const settingsToSave = {
                 isDarkMode: isDarkTheme,
-                pushNotifications,
                 locationServices,
                 currency,
                 searchRadius
@@ -60,7 +56,7 @@ export default function AppSettings() {
             }
         };
         saveSettings();
-    }, [isDarkTheme, pushNotifications, locationServices, currency, searchRadius, loading]);
+    }, [isDarkTheme, locationServices, currency, searchRadius, loading]);
 
     const handleThemeToggle = (value) => {
         setColorScheme(value ? 'dark' : 'light');
@@ -116,10 +112,10 @@ export default function AppSettings() {
                 <Text className="text-blue-500 font-bold">{searchRadius} km</Text>
             </View>
             <Text className="text-gray-400 dark:text-gray-500 text-xs mb-3">Maximum distance to look for dynamic route recommendations and nearby spots.</Text>
-            
+
             <View className="flex-row justify-between items-center">
                 {[5, 10, 20, 50].map((radius) => (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         key={radius}
                         onPress={() => setSearchRadius(radius)}
                         className={`flex-1 mx-1 py-2 rounded-xl items-center border ${searchRadius === radius ? 'bg-blue-600 border-blue-600' : 'bg-gray-50 dark:bg-gray-700 border-gray-100 dark:border-gray-600'}`}
@@ -151,56 +147,49 @@ export default function AppSettings() {
                     <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 mr-2">
                         <Text className="text-gray-500 dark:text-gray-400 text-xl font-medium">‹</Text>
                     </TouchableOpacity>
-                    <Image 
-                        source={settingsIcon} 
-                        className="w-6 h-6 mr-3 opacity-80" 
+                    <Image
+                        source={settingsIcon}
+                        className="w-6 h-6 mr-3 opacity-80"
                         style={isDarkTheme ? { tintColor: 'white' } : {}}
                     />
                     <Text className="text-gray-900 dark:text-white text-lg font-bold">App Settings</Text>
                 </View>
 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-                    
+
                     <SettingsSection title="Dynamic Recommendations">
                         <RadiusSelector />
                     </SettingsSection>
 
                     <SettingsSection title="Appearance & Preferences">
-                        <ToggleItem 
-                            label="Dark Mode" 
+                        <ToggleItem
+                            label="Dark Mode"
                             description="Change the app theme to dark for easier night viewing"
-                            value={isDarkTheme} 
-                            onValueChange={handleThemeToggle} 
+                            value={isDarkTheme}
+                            onValueChange={handleThemeToggle}
                             isLast={false}
                         />
-                        <SelectionItem 
-                            label="Default Currency" 
-                            value={currency} 
+                        <SelectionItem
+                            label="Default Currency"
+                            value={currency}
                             options={['USD ($)', 'LKR (Rs)', 'EUR (€)', 'GBP (£)']}
                             onSelect={setCurrency}
-                            isLast={true} 
+                            isLast={true}
                         />
                     </SettingsSection>
 
                     <SettingsSection title="Permissions & Privacy">
-                        <ToggleItem 
-                            label="Push Notifications" 
-                            description="Receive alerts for upcoming bookings and travel tips"
-                            value={pushNotifications} 
-                            onValueChange={setPushNotifications} 
-                            isLast={false}
-                        />
-                        <ToggleItem 
-                            label="Location Services" 
+                        <ToggleItem
+                            label="Location Services"
                             description="Allow app to suggest nearby attractions and photo spots"
-                            value={locationServices} 
-                            onValueChange={setLocationServices} 
+                            value={locationServices}
+                            onValueChange={setLocationServices}
                             isLast={true}
                         />
                     </SettingsSection>
-                    
+
                     <Text className="text-center text-gray-400 dark:text-gray-600 text-xs mt-4">Version 1.0.0 (Build 204)</Text>
-                    
+
                 </ScrollView>
             </SafeAreaView>
         </SafeAreaProvider>

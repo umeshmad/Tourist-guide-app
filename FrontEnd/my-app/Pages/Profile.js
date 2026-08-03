@@ -9,7 +9,7 @@ import star from '../assets/star.png';
 import bell from '../assets/bell.png';
 import shield from '../assets/shield.png';
 import settings from '../assets/settings.png';
-import questionMark from '../assets/question-mark.png';
+
 import support from '../assets/microphone.png';
 import pen from '../assets/pencil.png';
 import document from '../assets/google-docs.png';
@@ -93,8 +93,7 @@ export default function Profile() {
                             <View className="px-4 pt-4 pb-2">
                                 <Text className="text-gray-900 dark:text-white text-lg font-bold">Account Settings</Text>
                             </View>
-                            {menuItem(bell, 'Notifications', 'bg-blue-100 dark:bg-blue-900/40')}
-                            {menuItem(shield, 'Privacy', 'bg-green-100 dark:bg-green-900/40')}
+                            {menuItem(shield, 'Privacy', 'bg-green-100 dark:bg-green-900/40', () => navigation.navigate("TermsPrivacy"))}
                             {menuItem(settings, 'App Settings', 'bg-gray-100 dark:bg-gray-700', () => navigation.navigate("AppSettings"))}
                         </View>
                     </View>
@@ -105,9 +104,8 @@ export default function Profile() {
                             <View className="px-4 pt-4 pb-2">
                                 <Text className="text-gray-900 dark:text-white text-lg font-bold">Help & Support</Text>
                             </View>
-                            {menuItem(questionMark, 'FAQs', 'bg-orange-100 dark:bg-orange-900/40')}
-                            {menuItem(support, 'Contact Support', 'bg-purple-100 dark:bg-purple-900/40')}
-                            {menuItem(document, 'Terms & Privacy', 'bg-green-100 dark:bg-green-900/40')}
+                            {menuItem(support, 'Contact Support', 'bg-purple-100 dark:bg-purple-900/40', () => navigation.navigate("ContactSupport"))}
+                            {menuItem(document, 'Terms & Privacy', 'bg-green-100 dark:bg-green-900/40', () => navigation.navigate("TermsPrivacy"))}
                         </View>
                     </View>
 

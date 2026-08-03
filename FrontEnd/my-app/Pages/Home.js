@@ -20,6 +20,7 @@ import Snow from '../assets/Snow.png';
 import rainy from '../assets/rainy.png';
 import crisis from '../assets/crisis.png';
 import moneyExchange from '../assets/moneyExchange.png';
+import Camara from '../assets/wireless.png';
 import BASE_URL from '../config';
 
 
@@ -281,9 +282,9 @@ export default function Home() {
 
               <TouchableOpacity className="items-center" onPress={() => navigation.navigate("PhotoSpots")}>
                 <View className="w-16 h-16 bg-violet-50 dark:bg-violet-900/30 rounded-2xl justify-center items-center mb-2 border border-violet-100 dark:border-violet-800" style={{ elevation: isDark ? 0 : 2 }}>
-                  <Image source={Hiking} className="w-8 h-8" resizeMode="contain" />
+                  <Image source={Camara} className="w-10 h-10" resizeMode="contain" />
                 </View>
-                <Text className="text-xs text-gray-600 dark:text-gray-400 font-medium">Tours</Text>
+                <Text className="text-xs text-gray-600 dark:text-gray-400 font-medium">PhotoSpots</Text>
               </TouchableOpacity>
 
             </View>
