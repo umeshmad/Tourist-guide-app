@@ -1,9 +1,41 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded images as static files
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+app.use("/uploads", express.static(uploadsDir));
+
+// Multer storage config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, unique + path.extname(file.originalname));
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image files are allowed"));
+  }
+});
+
+// Image upload endpoint
+app.post("/upload/image", upload.single("image"), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  const imageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+  res.json({ success: true, url: imageUrl });
+});
 const dns = require("dns");
 const { features } = require("process");
 const turf = require("@turf/turf");
@@ -196,7 +228,7 @@ app.get("/Attractions/nearby", async (req, res) => {
 
     const nearby = allAttraction
       .map((attraction) => ({
-        ...hotel,
+        ...attraction,
         distanceKm: (getdistancekm(userLat, userLon, attraction.latitude, attraction.longitude).toFixed(2))
       }))
       .filter((attraction) => attraction.distanceKm <= maxRadius)
@@ -577,11 +609,147 @@ app.get("/route/recommendations", async (req, res) => {
 
 
 
+// --- Hotel Owner and Admin Portal Endpoints ---
+
+app.post("/owner/register", async (req, res) => {
+  try {
+    const { name, email, password, phone } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const existing = await db.collection("Hotel_Owners").findOne({ email });
+    if (existing) return res.status(409).json({ error: "Email already registered" });
+    
+    await db.collection("Hotel_Owners").insertOne({
+      name, email, password, phone,
+      isApproved: false, createdAt: new Date()
+    });
+    res.json({ success: true, message: "Registered. Pending admin approval." });
+  } catch (err) {
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+app.post("/owner/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await db.collection("Hotel_Owners").findOne({ email, password });
+    if (!user) return res.status(401).json({ error: "Invalid credentials" });
+    if (!user.isApproved) return res.status(403).json({ error: "Account pending admin approval" });
+    
+    res.json({ success: true, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+app.post("/owner/hotels", async (req, res) => {
+  try {
+    const { ownerId, hotel_name, description, star_rating, price_per_night_usd, review_count, features, latitude, longitude, image_url, nearest_cities } = req.body;
+    if (!ownerId || !hotel_name) return res.status(400).json({ error: "Missing fields" });
+    
+    await db.collection("Hotels").insertOne({
+      ownerId: new ObjectId(ownerId),
+      hotel_name, description,
+      star_rating: star_rating || '',
+      price_per_night_usd: price_per_night_usd || '',
+      review_count: review_count ? parseInt(review_count) : 0,
+      features: features || '',
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
+      image_url, nearest_cities,
+      isApproved: false, createdAt: new Date()
+    });
+    res.json({ success: true, message: "Hotel added. Pending admin approval." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add hotel" });
+  }
+});
+
+app.put("/owner/hotels/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    delete updates._id; // prevent id update
+    updates.isApproved = false; // reset approval on update
+    if (updates.latitude) updates.latitude = parseFloat(updates.latitude);
+    if (updates.longitude) updates.longitude = parseFloat(updates.longitude);
+
+    await db.collection("Hotels").updateOne({ _id: new ObjectId(id) }, { $set: updates });
+    res.json({ success: true, message: "Hotel updated. Pending admin approval." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update hotel" });
+  }
+});
+
+app.get("/owner/hotels/:ownerId", async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+    const hotels = await db.collection("Hotels").find({ ownerId: new ObjectId(ownerId) }).toArray();
+    res.json(hotels);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch hotels" });
+  }
+});
+
+// Admin routes
+app.get("/admin/pending", async (req, res) => {
+  try {
+    const pendingOwners = await db.collection("Hotel_Owners").find({ isApproved: false }).toArray();
+    const pendingHotels = await db.collection("Hotels").find({ isApproved: false }).toArray();
+    res.json({ owners: pendingOwners, hotels: pendingHotels });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch pending requests" });
+  }
+});
+
+app.put("/admin/approve-owner/:id", async (req, res) => {
+  try {
+    await db.collection("Hotel_Owners").updateOne({ _id: new ObjectId(req.params.id) }, { $set: { isApproved: true } });
+    res.json({ success: true, message: "Owner approved" });
+  } catch (err) {
+    res.status(500).json({ error: "Approval failed" });
+  }
+});
+
+app.put("/admin/approve-hotel/:id", async (req, res) => {
+  try {
+    await db.collection("Hotels").updateOne({ _id: new ObjectId(req.params.id) }, { $set: { isApproved: true } });
+    res.json({ success: true, message: "Hotel approved" });
+  } catch (err) {
+    res.status(500).json({ error: "Approval failed" });
+  }
+});
+
 async function createServer() {
   await mongodbconnect();
   app.listen(3000, "0.0.0.0", () => {
     console.log("Server is running on http://172.31.99.233:3000");
   });
 }
+
+app.post("/support/contact", async (req, res) => {
+  try {
+    const { name, email, subject, message, category } = req.body;
+    if (!name || !email || !message || !category) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    
+    await db.collection("Support_Tickets").insertOne({
+      name,
+      email,
+      subject,
+      message,
+      category,
+      status: "Open",
+      createdAt: new Date()
+    });
+    
+    res.json({ success: true, message: "Support ticket created successfully" });
+  } catch (err) {
+    console.error("Support contact error:", err);
+    res.status(500).json({ error: "Failed to submit support ticket" });
+  }
+});
 
 createServer();

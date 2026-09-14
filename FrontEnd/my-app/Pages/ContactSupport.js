@@ -13,6 +13,7 @@ import sparkleIcon from '../assets/sparkle.png';
 import userIcon from '../assets/user.png';
 import chatIcon from '../assets/chat.png';
 import officeIcon from '../assets/office.png';
+import BASE_URL from '../config';
 
 export default function ContactSupport() {
     const navigation = useNavigation();
@@ -32,7 +33,7 @@ export default function ContactSupport() {
         { id: 'general', label: 'General Inquiry', icon: chatIcon, color: 'bg-green-100 dark:bg-green-900/30', borderColor: 'border-green-200 dark:border-green-800', activeColor: 'bg-green-500' },
     ];
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!name.trim() || !email.trim() || !message.trim()) {
             Alert.alert('Missing Information', 'Please fill in your name, email, and message before submitting.');
             return;
@@ -41,12 +42,27 @@ export default function ContactSupport() {
             Alert.alert('Select Category', 'Please select a category for your inquiry.');
             return;
         }
-        Alert.alert(
-            'Message Sent!',
 
-            'Thank you for reaching out. Our support team will get back to you within 24-48 hours.',
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
+        try {
+            const res = await fetch(`${BASE_URL}/support/contact`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, subject, message, category: selectedCategory })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Alert.alert(
+                    'Message Sent!',
+                    'Thank you for reaching out. Our support team will get back to you within 24-48 hours.',
+                    [{ text: 'OK', onPress: () => navigation.goBack() }]
+                );
+            } else {
+                Alert.alert('Error', data.error || 'Failed to send message.');
+            }
+        } catch (err) {
+            console.error('Contact support error:', err);
+            Alert.alert('Error', 'Failed to connect to the server. Please try again later.');
+        }
     };
 
     const InputField = ({ label, value, onChangeText, placeholder, multiline, keyboardType }) => (

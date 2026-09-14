@@ -19,6 +19,7 @@ import BASE_URL from '../config';
 import rest from '../assets/rest.png';
 import Resturants from './Resturants';
 import {isLocationEnable} from './locationPref';
+import { getSearchRadius } from './searchRadius';
 
 
 export default function Search() {
@@ -73,7 +74,9 @@ export default function Search() {
             const { longitude, latitude } = locationData.coords;
             setUserLocation({ longitude, latitude });
 
-            const res = await fetch(`${BASE_URL}/Hotels/nearby?longitude=${longitude}&latitude=${latitude}`);
+            const radius=await getSearchRadius();
+
+            const res = await fetch(`${BASE_URL}/Hotels/nearby?longitude=${longitude}&latitude=${latitude}&radius=${radius}`);
             const data = await res.json();
 
             navigation.navigate("Hotels", { hotels: data, dayID })
@@ -108,10 +111,49 @@ export default function Search() {
             const { longitude, latitude } = locationData.coords;
             setUserLocation({ longitude, latitude });
 
-            const res = await fetch(`${BASE_URL}/Resturants/nearby?longitude=${longitude}&latitude=${latitude}`);
+            const radius=await getSearchRadius();
+
+            const res = await fetch(`${BASE_URL}/Resturants/nearby?longitude=${longitude}&latitude=${latitude}&radius=${radius}`);
             const data = await res.json();
 
             navigation.navigate("Resturants", { resturant: data, dayID })
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchAttractionsNearMe = async () => {
+        try {
+            const Enable = await isLocationEnable();
+            if (!Enable) {
+                Alert.alert(
+                    "Location Service off",
+                    "Turn on Location Services in Permissions & Privacy to find attractions near you.",
+                    [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Go to Settings", onPress: () => navigation.navigate("AppSettings") }
+                    ]
+                );
+                return;
+            }
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert("Permission Denied", "Allow location access to find attractions near you.");
+                return;
+            }
+            setLoading(true);
+            const locationData = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+            const { longitude, latitude } = locationData.coords;
+            setUserLocation({ longitude, latitude });
+
+            const radius = await getSearchRadius();
+
+            const res = await fetch(`${BASE_URL}/Attractions/nearby?longitude=${longitude}&latitude=${latitude}&radius=${radius}`);
+            const data = await res.json();
+
+            navigation.navigate("Attraction", { place: data, dayID })
         } catch (err) {
             console.error(err);
         } finally {
@@ -296,7 +338,7 @@ export default function Search() {
                                 </View>
                             </TouchableOpacity>
 
-                            <TouchableOpacity onPress={() => navigation.navigate("Attraction", { dayID })} className="w-[48%] mb-3">
+                            <TouchableOpacity onPress={fetchAttractionsNearMe}className="w-[48%] mb-3">
                                 <View className="h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex-row items-center px-3"
                                     style={{ elevation: isDark ? 0 : 2 }}>
                                     <View className="bg-emerald-50 dark:bg-emerald-900/30 rounded-xl w-10 h-10 justify-center items-center">
