@@ -1,0 +1,218 @@
+# Preference-Based Search & Location-Context Adaptive Recommendations
+
+## 1. Executive Summary
+
+This document explains the architecture, mathematical scoring model, classification engine, and context-scoping mechanics of the **Preference-Based Search & Adaptive Recommendation System**.
+
+### The Core Problem Solved
+Traditional behavior-based recommenders track what a user taps globally. If a user clicks 10 beaches while staying in Galle, a traditional system keeps recommending beaches even when the user travels to **Kandy** (in the mountains) or **Anuradhapura** (an ancient heritage city) where no beaches exist!
+
+### The Solution: Location-Context Scoping
+Our system introduces a **3-Signal Adaptive Scoring Model**. Historical region behavior is **context-scoped**:
+- When the user is in **Galle** (coastal context), their historical beach interest yields a **+5 region bonus** for coastal spots.
+- When the same user travels to **Kandy** (hill context) or **Polonnaruwa** (heritage context), the beach region bonus is automatically **inhibited (0 bonus)**. Results adaptively shift to hill tops, tea plantations, or ancient temples matching their location and evolving search intent.
+- In multi-trait cities like **Colombo** (possessing beaches, temples, and city life), an adaptive **Diversity Interleaver** prevents mono-topic results when interest scores are closely matched.
+
+---
+
+## 2. System Architecture
+
+Below is the high-level architecture showing how static user preferences, behavior logging, and real-time location context combine in the recommendation engine:
+
+![System Architecture](file:///C:/Users/umesh/.gemini/antigravity-ide/brain/d2ae5799-1ecc-4858-82ff-cfb51c087fb3/recommendation_architecture_1789405813581.jpg)
+
+### Sequence Diagram & Component Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor MobileUser as Mobile App User
+    participant Frontend as React Native Frontend
+    participant Server as Node.js / Express Server
+    participant Classifier as Region Classifier
+    participant MongoDB as MongoDB Database
+
+    Note over MobileUser, MongoDB: Phase 1: Tap Behavior Logging
+    MobileUser->>Frontend: Taps Attraction ("Passikudah Beach")
+    Frontend->>Server: POST /log/behaviour { email, itemId, itemCategory, itemCity, itemProvince }
+    Server->>Classifier: classifyRegion(place)
+    Classifier-->>Server: returns { regionType: "coastal", sourceRegion: "Kalkudah" }
+    Server->>MongoDB: insertOne(Behaviour_Logs)
+
+    Note over MobileUser, MongoDB: Phase 2: Location-Context Search & Recommendation
+    MobileUser->>Frontend: Opens Search or Personal Recommendations
+    Frontend->>Server: GET /recommendations/personal?email=user@lk.com&lat=7.2906&lon=80.6337
+    Server->>Classifier: deriveContextRegionFromGPS(7.2906, 80.6337)
+    Classifier-->>Server: returns "hill" (Kandy area)
+    Server->>MongoDB: Fetch Users Preferences + Behaviour_Logs (last 60 days) + Attractions
+    MongoDB-->>Server: Data returned
+    Server->>Server: Calculate 3-Signal Score for each attraction
+    Note over Server: Scoped Gate: Beach items get 0 region bonus in "hill" context!
+    Server->>Server: diversifyResults(scoredAttractions)
+    Server-->>Frontend: JSON [ top 10 personalized, context-aware items ]
+    Frontend-->>MobileUser: Renders ranked cards with ✨ "Matches your interests" badges
+```
+
+---
+
+## 3. The 3-Signal Scoring Model
+
+Every candidate attraction is assigned a total score between **0 and 16 points**:
+
+$$\text{Total Score} = \text{static\_weight} + \text{category\_behaviour\_weight} + \text{region\_behaviour\_weight}$$
+
+| Signal | Source | Max Points | Description |
+|---|---|---|---|
+| **Signal 1: `static_weight`** | Registration User Preferences | **+6 pts** | Match against `travelStyle` (+3), `environment` (+2), and `activities` (+1 each, max 3). |
+| **Signal 2: `category_behaviour_weight`** | Global 60-day Tap Logs | **+5 pts** | Tap count on matching category across all locations ($1 \text{ tap} = +1\text{ pt}$, capped at 5). |
+| **Signal 3: `region_behaviour_weight`** | Context-Scoped Region Logs | **+5 pts** | Tap count on matching region type **ONLY IF** candidate region matches current context ($1 \text{ tap} = +1\text{ pt}$, capped at 5). |
+
+> [!IMPORTANT]
+> **Context Gate Rule**:
+> $$\text{region\_behaviour\_weight} = \begin{cases} \min(\text{taps in candidate region}, 5), & \text{if } \text{itemRegionType} == \text{currentContextRegion} \\ 0, & \text{otherwise} \end{cases}$$
+
+---
+
+## 4. Region Classifier Engine (`classifyRegion`)
+
+Since attractions in the database do not have a hardcoded `environment` field, the classifier infers region type dynamically using a 5-level priority chain:
+
+```
+1. Explicit Environment Field (if present)
+       ↓
+2. Attraction Type / Category Keywords ("Beach", "Temple", "Waterfall")
+       ↓
+3. Province Hierarchy ("Central Province" → hill)
+       ↓
+4. City Dictionary Lookup ("Galle" → coastal, "Kandy" → hill, "Polonnaruwa" → heritage)
+       ↓
+5. Fallback → "inland"
+```
+
+### Reference Region Mapping Table
+
+| Region Type | Category / Type Keywords | City Dictionary Matches | Province Matches |
+|---|---|---|---|
+| **`coastal`** | `beach`, `lagoon`, `island`, `surf`, `bay`, `marine`, `sea`, `reef` | Galle, Mirissa, Unawatuna, Hikkaduwa, Bentota, Negombo, Trincomalee, Kalkudah, Arugam Bay, Tangalle, Nilaveli, Passikudah, Weligama, Kalutara, Hambantota | Maritime coastal zones |
+| **`hill`** | `hill`, `mountain`, `highland`, `peak`, `tea plantation`, `waterfall`, `trek` | Nuwara Eliya, Ella, Kandy, Hatton, Haputale, Bandarawela, Knuckles, Hali Ela, Welimada, Badulla, Ohiya | Central, Uva, Sabaragamuwa |
+| **`heritage`** | `temple`, `shrine`, `fort`, `historic`, `ruins`, `heritage`, `museum`, `stupa`, `dagoba`, `palace` | Anuradhapura, Polonnaruwa, Sigiriya, Dambulla, Galle Fort, Jaffna, Medirigiriya, Mihintale, Ritigala | North Central heritage triangle |
+| **`inland`** | Wildlife, forests, safari parks, urban inland places | Kurunegala, Ratnapura, Embilipitiya, Monaragala | Western inland, North Western inland |
+
+---
+
+## 5. Location Context Scoping in Action
+
+Here is a visual scenario showing how recommendations adapt dynamically when a user moves between regions:
+
+![Location Context Scoping](file:///C:/Users/umesh/.gemini/antigravity-ide/brain/d2ae5799-1ecc-4858-82ff-cfb51c087fb3/location_context_scoping_diagram_1789405830343.jpg)
+
+---
+
+## 6. Detailed Concrete Scenarios & Scoring Walkthroughs
+
+### User Profile Setup
+- **User Registered Preferences**: `travelStyle = culture`, `environment = historic`, `activities = ['sightseeing']`
+- **Behavior Log History (Last 60 Days)**:
+  - 5 clicks on **Beach / Coastal** attractions (while previously in Galle/Mirissa)
+  - 2 clicks on **Heritage / Temple** attractions
+
+---
+
+### Scenario A: User is in Galle (Coastal Region Context)
+- **Current Location / Query Context**: `coastal`
+- **Scoring Breakdown**:
+
+| Candidate Attraction | Category | Region | Static Prefs | Cat Behavior | Region Behavior (Coastal Context) | Total Score | Rank |
+|---|---|---|---|---|---|---|---|
+| **Galle Fort Walk** | Heritage | `coastal` | +6 (culture+historic+sightseeing) | +2 (heritage) | **+5 (coastal match)** | **13 pts** | **#1** |
+| **Unawatuna Beach** | Beach | `coastal` | 0 | +5 (beach) | **+5 (coastal match)** | **10 pts** | **#2** |
+| **Temple of the Tooth (Kandy)** | Temple | `hill` | +6 | +2 | **0 (hill != coastal)** | **8 pts** | **#3** |
+| **Ruwanwelisaya (Anuradhapura)** | Stupa | `heritage` | +6 | +2 | **0 (heritage != coastal)** | **8 pts** | **#4** |
+
+*Result:* Galle Fort and Unawatuna Beach top the list because coastal behavior is active.
+
+---
+
+### Scenario B: User Travels to Kandy (Hill Region Context)
+- **Current Location / Query Context**: `hill`
+- **Scoring Breakdown**:
+
+| Candidate Attraction | Category | Region | Static Prefs | Cat Behavior | Region Behavior (Hill Context) | Total Score | Rank |
+|---|---|---|---|---|---|---|---|
+| **Temple of the Tooth** | Temple / Heritage | `hill` | +6 (culture+historic+sightseeing) | +2 (heritage) | **+0 (hill region, 0 hill taps)** | **8 pts** | **#1** |
+| **Royal Botanical Gardens** | Nature / Park | `hill` | 0 | 0 | **+0 (hill region)** | **0 pts** | **#2** |
+| **Unawatuna Beach** | Beach | `coastal` | 0 | +5 (beach) | **0 (coastal != hill - GATE BLOCKED!)** | **5 pts** | **#3** |
+
+*Result:* The +5 coastal region bonus is **inhibited**. Beach attractions drop down, and local Kandy heritage/hill attractions float to the top!
+
+---
+
+### Scenario C: User Travels to Polonnaruwa & Searches "Temples"
+- **Current Location / Query Context**: `heritage`
+- **Behavior Update**: User taps 3 temples in Polonnaruwa.
+- **Updated Logs**: Heritage taps increase from 2 to 5; Heritage region taps increase to 5.
+- **Scoring Breakdown**:
+
+| Candidate Attraction | Category | Region | Static Prefs | Cat Behavior | Region Behavior (Heritage Context) | Total Score | Rank |
+|---|---|---|---|---|---|---|---|
+| **Polonnaruwa Vatadage** | Temple | `heritage` | +6 | +5 (temples) | **+5 (heritage match)** | **16 pts (MAX)** | **#1** |
+| **Gal Vihara** | Historic | `heritage` | +6 | +5 | **+5 (heritage match)** | **16 pts (MAX)** | **#2** |
+| **Unawatuna Beach** | Beach | `coastal` | 0 | +5 | **0 (coastal != heritage)** | **5 pts** | **#5** |
+
+*Result:* Heritage items reach the maximum **16/16 score**. Non-heritage places are de-boosted.
+
+---
+
+### Scenario D: User in Colombo (Multi-Feature Hub) & Diversity Interleaving
+- **Current Location**: Colombo (possesses beaches, urban shopping, and historical temples).
+- If multiple top items have scores within **2 points** of each other (e.g. Galle Face Beach = 10 pts, Gangaramaya Temple = 9 pts, National Museum = 9 pts), `diversifyResults()` kicks in:
+
+```
+Raw Sorted: [ Beach_1 (10pts), Beach_2 (10pts), Beach_3 (10pts), Temple_1 (9pts), Museum_1 (9pts) ]
+                       ↓
+After diversifyResults() Interleaving:
+[ Beach_1 (10pts), Temple_1 (9pts), Museum_1 (9pts), Beach_2 (10pts), Beach_3 (10pts) ]
+```
+
+*Result:* The user gets a rich, diversified feed across different categories rather than 10 identical beach cards in a row.
+
+---
+
+## 7. MongoDB Collection Schema
+
+### Collection: `Behaviour_Logs`
+```json
+{
+  "_id": "66e4a1b2f9011a0012e84a91",
+  "email": "user@example.com",
+  "userId": "user_123",
+  "itemId": "attraction_456",
+  "itemName": "Unawatuna Beach",
+  "itemType": "attraction",
+  "itemCategory": "Nature",
+  "itemEnvironment": "coastal",
+  "itemAttractionType": "Beaches",
+  "itemCity": "Unawatuna",
+  "itemProvince": "Southern Province",
+  "regionType": "coastal",
+  "sourceRegion": "Unawatuna",
+  "timestamp": "2026-09-14T22:00:00.000Z"
+}
+```
+
+---
+
+## 8. Summary of API Endpoints
+
+### 1. `POST /log/behaviour`
+- **Purpose**: Log user tap on any attraction/hotel/restaurant.
+- **Body**: `{ email, itemId, itemName, itemType, itemCategory, itemEnvironment, itemAttractionType, itemCity, itemProvince }`
+- **Output**: `{ success: true, regionType, sourceRegion }`
+
+### 2. `GET /Search/All`
+- **Query Params**: `?q=search_term&email=user_email&lat=7.29&lon=80.63`
+- **Output**: `{ contextRegion: "hill", attractions: [...], hotels: [...], restaurants: [...] }` (Pre-ranked with preference scores & ✨ badges).
+
+### 3. `GET /recommendations/personal`
+- **Query Params**: `?email=user_email&lat=7.29&lon=80.63`
+- **Output**: Top 10 context-aware personalized recommendations.

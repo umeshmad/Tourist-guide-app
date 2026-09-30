@@ -67,6 +67,7 @@ export default function Home() {
   };
 
   const [alerts, setAlerts] = useState([]);
+  const [alertsVisible, setAlertsVisible] = useState(true);
 
   const handleLkrChange = (val) => {
     setLkrAmount(val);
@@ -132,7 +133,7 @@ export default function Home() {
           city
         }))
         .catch(() => { });
-      fetch(`${BASE_URL}/weather/alert?lat=${lat}&lon=${lon}`)
+      fetch(`${BASE_URL}/weather/district-alerts`)
         .then(t => t.json())
         .then(data => setAlerts(data.alerts || []))
         .catch(() => { });
@@ -196,40 +197,66 @@ export default function Home() {
           </View>
         </TouchableOpacity>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-
-          {/* Safety Warnings */}
-
-          {alerts.length > 0 && (
-            <View className="mt-4 px-5">
-              {alerts.slice(0, 2).map((alert, i) => (
-                <View
-                  key={i}
-                  className={`rounded-2xl p-4 flex-row items-start mb-2 ${alert.level === 'red' ? 'bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800' :
-                    alert.level === 'amber' ? 'bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800' :
-                      'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-100 dark:border-yellow-800'
-                    }`}
-                  style={{ elevation: isDark ? 0 : 1 }}
-                >
-                  <Image source={crisis} className="h-5 w-5"></Image>
-                  <View className="flex-1">
-                    <Text className={`font-bold text-sm ${alert.level === 'red' ? 'text-red-800 dark:text-red-400' :
-                      alert.level === 'amber' ? 'text-orange-800 dark:text-orange-400' :
-                        'text-yellow-800 dark:text-yellow-400'
-                      }`}>
-                      {alert.place}
-                    </Text>
-                    <Text className={`text-xs mt-0.5 leading-4 ${alert.level === 'red' ? 'text-red-600 dark:text-red-500' :
-                      alert.level === 'amber' ? 'text-orange-600 dark:text-orange-500' :
-                        'text-yellow-600 dark:text-yellow-500'
-                      }`}>
-                      {alert.message}
-                    </Text>
-                  </View>
+        {/* ── District Weather Alert Banner (sticky, dismissible) ── */}
+        {alertsVisible && alerts.length > 0 && (
+          <View
+            className="mx-4 mt-3 rounded-2xl overflow-hidden border"
+            style={{
+              borderColor: alerts[0]?.level === 'red' ? '#FCA5A5' : alerts[0]?.level === 'amber' ? '#FCD34D' : '#FDE68A',
+              backgroundColor: isDark
+                ? (alerts[0]?.level === 'red' ? 'rgba(127,29,29,0.5)' : alerts[0]?.level === 'amber' ? 'rgba(120,53,15,0.5)' : 'rgba(113,63,18,0.5)')
+                : (alerts[0]?.level === 'red' ? '#FEF2F2' : alerts[0]?.level === 'amber' ? '#FFFBEB' : '#FEFCE8'),
+            }}
+          >
+            {/* Banner Header */}
+            <View className="flex-row items-center justify-between px-4 py-2.5 border-b" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+              <View className="flex-row items-center">
+                <Image source={crisis} style={{ width: 18, height: 18 }} />
+                <Text className="ml-2 font-bold text-sm text-gray-800 dark:text-gray-100">Weather Alerts · Sri Lanka</Text>
+                <View className={`ml-2 px-2 py-0.5 rounded-full ${
+                  alerts[0]?.level === 'red' ? 'bg-red-500' : alerts[0]?.level === 'amber' ? 'bg-amber-500' : 'bg-yellow-400'
+                }`}>
+                  <Text className="text-white text-[10px] font-bold">{alerts.length} district{alerts.length !== 1 ? 's' : ''}</Text>
                 </View>
-              ))}
+              </View>
+              <TouchableOpacity
+                onPress={() => setAlertsVisible(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                activeOpacity={0.7}
+              >
+                <Text className="text-gray-400 dark:text-gray-400 text-lg font-bold">✕</Text>
+              </TouchableOpacity>
             </View>
-          )}
+
+            {/* Alert Rows – show up to 5 */}
+            {alerts.slice(0, 5).map((alert, i) => (
+              <View
+                key={i}
+                className="flex-row items-start px-4 py-2.5"
+                style={i < Math.min(alerts.length, 5) - 1 ? { borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.06)' } : {}}
+              >
+                {/* Level pill */}
+                <View className={`rounded-full px-2 py-0.5 mr-3 mt-0.5 ${
+                  alert.level === 'red' ? 'bg-red-500' : alert.level === 'amber' ? 'bg-amber-500' : 'bg-yellow-400'
+                }`}>
+                  <Text className="text-white text-[9px] font-bold uppercase">{alert.level}</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-800 dark:text-gray-100 text-xs font-bold">{alert.district}</Text>
+                  <Text className="text-gray-500 dark:text-gray-400 text-[11px] leading-4 mt-0.5">{alert.message}</Text>
+                </View>
+              </View>
+            ))}
+
+            {alerts.length > 5 && (
+              <View className="px-4 pb-2">
+                <Text className="text-gray-400 dark:text-gray-500 text-[11px]">+{alerts.length - 5} more districts affected</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
           {/* Featured Destinations */}
           <View className="mt-6 px-5">

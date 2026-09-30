@@ -4,6 +4,7 @@ import { View, Text, Image, TouchableOpacity, Alert, ScrollView } from 'react-na
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Women from '../assets/Women.jpg';
 import hart from '../assets/heart.png';
+import schedule from '../assets/schedule.png';
 import calander from '../assets/calendar.png';
 import star from '../assets/star.png';
 import bell from '../assets/bell.png';
@@ -15,11 +16,28 @@ import pen from '../assets/pencil.png';
 import document from '../assets/google-docs.png';
 import { useNavigation } from '@react-navigation/native';
 import { useColorScheme } from 'nativewind';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { SAVED_PLACES_KEY } from './SavedPlaces';
 
 export default function Profile() {
     const navigation = useNavigation();
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const [savedCount, setSavedCount] = React.useState(0);
+
+    // Reload saved count every time Profile tab is focused
+    useFocusEffect(
+        React.useCallback(() => {
+            (async () => {
+                try {
+                    const data = await AsyncStorage.getItem(SAVED_PLACES_KEY);
+                    const list = data ? JSON.parse(data) : [];
+                    setSavedCount(list.length);
+                } catch (err) {}
+            })();
+        }, [])
+    );
 
     const menuItem = (icon, label, iconBg, onPress) => (
         <TouchableOpacity
@@ -72,17 +90,23 @@ export default function Profile() {
                     <View className="px-4 pb-4">
                         <View className="flex-row">
                             {[
-                                { icon: hart, count: '24', label: 'Saved Places', bg: 'bg-red-100' },
-                                { icon: calander, count: '8', label: 'Bookings', bg: 'bg-blue-100' },
-                                { icon: star, count: '12', label: 'Reviews', bg: 'bg-yellow-100' },
+                                { icon: hart, count: String(savedCount), label: 'Saved Places', bg: 'bg-red-100', route: 'SavedPlaces' },
+                                { icon: schedule, count: '4', label: 'Trip Plans', bg: 'bg-blue-100', route: 'Tour Planing' },
+                                { icon: star, count: '12', label: 'Reviews', bg: 'bg-yellow-100', route: null },
                             ].map((item, i) => (
-                                <View key={i} className="flex-1 mx-1.5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 py-4 items-center" style={{ elevation: isDark ? 0 : 2 }}>
+                                <TouchableOpacity
+                                    key={i}
+                                    onPress={() => item.route ? navigation.navigate(item.route) : null}
+                                    activeOpacity={item.route ? 0.8 : 1}
+                                    className="flex-1 mx-1.5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 py-4 items-center"
+                                    style={{ elevation: isDark ? 0 : 2 }}
+                                >
                                     <View className={`h-12 w-12 rounded-full ${item.bg} justify-center items-center`}>
                                         <Image source={item.icon} className="h-7 w-7" />
                                     </View>
                                     <Text className="text-gray-900 dark:text-white text-2xl font-bold mt-2">{item.count}</Text>
                                     <Text className="text-gray-400 dark:text-gray-500 text-xs mt-0.5">{item.label}</Text>
-                                </View>
+                                </TouchableOpacity>
                             ))}
                         </View>
                     </View>
@@ -93,7 +117,6 @@ export default function Profile() {
                             <View className="px-4 pt-4 pb-2">
                                 <Text className="text-gray-900 dark:text-white text-lg font-bold">Account Settings</Text>
                             </View>
-                            {menuItem(shield, 'Privacy', 'bg-green-100 dark:bg-green-900/40', () => navigation.navigate("TermsPrivacy"))}
                             {menuItem(settings, 'App Settings', 'bg-gray-100 dark:bg-gray-700', () => navigation.navigate("AppSettings"))}
                         </View>
                     </View>

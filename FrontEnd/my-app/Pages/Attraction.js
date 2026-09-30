@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { SAVED_PLACES_KEY } from './SavedPlaces';
 import { Text, View, TouchableOpacity, Image, ScrollView, TextInput, FlatList, Linking } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
 import '../global.css';
 import logo from '../assets/search.png';
+import heartIcon from '../assets/heart.png';
 import star from '../assets/star.png';
 import drop from '../assets/drop.png';
 import dropw from '../assets/drop-w.png';
@@ -56,7 +58,9 @@ const AttractionCard = React.memo(({
     onLogClick,
     onAddToTasks,
     onOpenMap,
-    isDark
+    isDark,
+    isSaved,
+    onSave
 }) => {
     return (
         <View className="mb-3">
@@ -68,7 +72,7 @@ const AttractionCard = React.memo(({
                         onLogClick(item);
                         onExpand(item._id);
                         if (!item.weatherInfo) {
-                            onFetchWeather(item.latitude, item.longitude, item._id);
+                            onFetchWeather(item.latitude, item.longitude, item._id, item.attraction_name);
                         }
                     }}
                     className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 w-full overflow-hidden"
@@ -132,12 +136,23 @@ const AttractionCard = React.memo(({
                                 </View>
                             </View>
                             <View className="items-end">
+                                {/* Save / Heart Button */}
+                                <TouchableOpacity
+                                    onPress={() => onSave(item)}
+                                    className={`w-9 h-9 rounded-full justify-center items-center mb-1 ${isSaved ? 'bg-red-500' : 'bg-gray-100 dark:bg-gray-700'}`}
+                                    activeOpacity={0.8}
+                                >
+                                    <Image
+                                        source={heartIcon}
+                                        style={{ width: 18, height: 18, tintColor: isSaved ? 'white' : '#9CA3AF' }}
+                                    />
+                                </TouchableOpacity>
                                 <View className="bg-orange-100 dark:bg-orange-900/40 rounded-lg px-2 py-1">
                                     <Text className="text-orange-600 dark:text-orange-400 text-xs font-bold">{item.attraction_type}</Text>
                                 </View>
                                 {/* Weather Badge */}
                                 {item.weatherInfo ? (
-                                    <View className="flex-row items-center bg-white dark:bg-gray-900 rounded-xl px-1.5 py-1 mt-6 border border-gray-100 dark:border-gray-700">
+                                    <View className="flex-row items-center bg-white dark:bg-gray-900 rounded-xl px-1.5 py-1 mt-2 border border-gray-100 dark:border-gray-700">
                                         <Image
                                             source={getWeatherImage(item.weatherInfo.weathercode)}
                                             style={{ width: 24, height: 24 }}
@@ -158,6 +173,47 @@ const AttractionCard = React.memo(({
                         </View>
 
                         <Text className="text-sm text-gray-600 dark:text-gray-300 mt-3">{item.description}</Text>
+
+                        {/* Place-Specific Weather Alert */}
+                        {item.weatherInfo?.alert && (
+                            <View
+                                className={`flex-row items-start rounded-xl p-3 mt-3 ${
+                                    item.weatherInfo.alert.level === 'red'
+                                        ? 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700'
+                                        : item.weatherInfo.alert.level === 'amber'
+                                        ? 'bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700'
+                                        : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700'
+                                }`}
+                            >
+                                <View className={`rounded-full px-2 py-0.5 mr-2 mt-0.5 ${
+                                    item.weatherInfo.alert.level === 'red' ? 'bg-red-500' :
+                                    item.weatherInfo.alert.level === 'amber' ? 'bg-amber-500' : 'bg-yellow-400'
+                                }`}>
+                                    <Text className="text-white text-[9px] font-bold uppercase">
+                                        {item.weatherInfo.alert.level}
+                                    </Text>
+                                </View>
+                                <View className="flex-1">
+                                    <Text className={`text-xs font-bold ${
+                                        item.weatherInfo.alert.level === 'red' ? 'text-red-700 dark:text-red-400' :
+                                        item.weatherInfo.alert.level === 'amber' ? 'text-amber-700 dark:text-amber-400' :
+                                        'text-yellow-700 dark:text-yellow-400'
+                                    }`}>
+                                        ⚠ Weather Advisory
+                                    </Text>
+                                    <Text className={`text-[11px] mt-0.5 leading-4 ${
+                                        item.weatherInfo.alert.level === 'red' ? 'text-red-600 dark:text-red-500' :
+                                        item.weatherInfo.alert.level === 'amber' ? 'text-amber-600 dark:text-amber-500' :
+                                        'text-yellow-600 dark:text-yellow-500'
+                                    }`}>
+                                        {item.weatherInfo.alert.message}
+                                    </Text>
+                                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] mt-1">
+                                        💨 {item.weatherInfo.wind_speed_10m?.toFixed(1)} km/h wind  ·  🌧 {(item.weatherInfo.rain || 0).toFixed(1)} mm rain
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
 
                         <View className="h-[1px] bg-gray-200 dark:bg-gray-700 my-4" />
 
@@ -212,9 +268,40 @@ export default function Attraction() {
     const navigation = useNavigation();
     const singlePlace = Route.params?.place;
     const [expandId, setExpandId] = useState(null);
+    const [savedIds, setSavedIds] = useState(new Set());
 
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
+
+    // Load saved place IDs from AsyncStorage on mount
+    useEffect(() => {
+        (async () => {
+            try {
+                const data = await AsyncStorage.getItem(SAVED_PLACES_KEY);
+                const list = data ? JSON.parse(data) : [];
+                setSavedIds(new Set(list.map(p => String(p._id))));
+            } catch (err) { }
+        })();
+    }, []);
+
+    const toggleSave = useCallback(async (place) => {
+        try {
+            const data = await AsyncStorage.getItem(SAVED_PLACES_KEY);
+            let list = data ? JSON.parse(data) : [];
+            const idStr = String(place._id);
+            const alreadySaved = list.some(p => String(p._id) === idStr);
+            if (alreadySaved) {
+                list = list.filter(p => String(p._id) !== idStr);
+                setSavedIds(prev => { const next = new Set(prev); next.delete(idStr); return next; });
+            } else {
+                list.push({ ...place, savedAt: new Date().toISOString() });
+                setSavedIds(prev => new Set([...prev, idStr]));
+            }
+            await AsyncStorage.setItem(SAVED_PLACES_KEY, JSON.stringify(list));
+        } catch (err) {
+            console.error('Failed to toggle save:', err);
+        }
+    }, []);
 
 
     const addToTasks = useCallback(async (place) => {
@@ -294,9 +381,10 @@ export default function Attraction() {
         }
     }, [Route.params?.selectAttraction]);
 
-    const fetchWeather = useCallback(async (lat, lon, id) => {
+    const fetchWeather = useCallback(async (lat, lon, id, name) => {
         try {
-            const res = await fetch(`${BASE_URL}/weather?lat=${lat}&lon=${lon}`);
+            const encodedName = encodeURIComponent(name || '');
+            const res = await fetch(`${BASE_URL}/weather/place-alert?lat=${lat}&lon=${lon}&name=${encodedName}`);
             const data = await res.json();
             setAttraction(prev => prev.map(place =>
                 place._id === id ? { ...place, weatherInfo: data } : place
@@ -315,8 +403,10 @@ export default function Attraction() {
             onAddToTasks={addToTasks}
             onOpenMap={handleOpenMap}
             isDark={isDark}
+            isSaved={savedIds.has(String(item._id))}
+            onSave={toggleSave}
         />
-    ), [expandId, fetchWeather, logClick, addToTasks, handleOpenMap, isDark]);
+    ), [expandId, fetchWeather, logClick, addToTasks, handleOpenMap, isDark, savedIds, toggleSave]);
 
     return (
         <SafeAreaProvider>

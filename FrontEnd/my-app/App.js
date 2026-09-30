@@ -23,6 +23,7 @@ import AppSettings from './Pages/AppSettings';
 
 import ContactSupport from './Pages/ContactSupport';
 import TermsPrivacy from './Pages/TermsPrivacy';
+import SavedPlaces from './Pages/SavedPlaces';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -75,6 +76,7 @@ export default function App() {
 
         <Stack.Screen name="ContactSupport" component={ContactSupport} options={{ headerShown: false }}/>
         <Stack.Screen name="TermsPrivacy" component={TermsPrivacy} options={{ headerShown: false }}/>
+        <Stack.Screen name="SavedPlaces" component={SavedPlaces} options={{ headerShown: false }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

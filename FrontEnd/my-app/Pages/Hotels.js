@@ -19,9 +19,11 @@ import kitchen from '../assets/kitchen.png';
 import family from '../assets/family.png';
 import garden from '../assets/park.png';
 import cultural from '../assets/cultural.png';
+import sparkle from '../assets/sparkle.png';
 import BASE_URL from '../config';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUserEmail } from '../utils/prefUtils';
 import '../global.css';
 
 const proxyImage = (rawUrl) => {
@@ -84,7 +86,9 @@ export default function Hotel() {
             const fetchAllHotels = async () => {
                 try {
                     setLoading(true);
-                    const res = await fetch(`${BASE_URL}/Hotels`);
+                    const email = await getUserEmail();
+                    const emailParam = email ? `?email=${encodeURIComponent(email)}` : '';
+                    const res = await fetch(`${BASE_URL}/Hotels${emailParam}`);
                     const data = await res.json();
                     setHotels(data);
                     setOriginalHotels(data);
@@ -103,7 +107,9 @@ export default function Hotel() {
         try {
             if (!query) { setHotels([]); return; }
             setLoading(true);
-            const res = await fetch(`${BASE_URL}/Hotels?q=${query}`);
+            const email = await getUserEmail();
+            const emailParam = email ? `&email=${encodeURIComponent(email)}` : '';
+            const res = await fetch(`${BASE_URL}/Hotels?q=${encodeURIComponent(query)}${emailParam}`);
             const data = await res.json();
             setHotels(data);
             setOriginalHotels(data);
@@ -279,12 +285,18 @@ export default function Hotel() {
                                         activeOpacity={0.92}
                                     >
                                         {/* Image Banner */}
-                                        <View className="h-36 w-full">
+                                        <View className="h-36 w-full relative">
                                             <Image
                                                 source={{ uri: proxyImage(hotel.image_url) }}
                                                 className="w-full h-full"
                                                 resizeMode="cover"
                                             />
+                                            {(hotel.preferenceMatch || (hotel.preferenceScore != null && hotel.preferenceScore > 0)) && (
+                                                <View className="absolute top-2.5 left-2.5 bg-rose-500 px-3 py-1 rounded-full z-10 flex-row items-center shadow-md">
+                                                    <Image source={sparkle} className="w-3 h-3 mr-1" style={{ tintColor: 'white' }} />
+                                                    <Text className="text-white text-[11px] font-bold">Suggested for you</Text>
+                                                </View>
+                                            )}
                                         </View>
 
                                         {/* Info Row */}
@@ -320,9 +332,17 @@ export default function Hotel() {
                                 {/* Expanded Card */}
                                 {expand === index && (
                                     <View className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 translate-y-2 w-full mb-12 overflow-hidden" style={{ elevation: isDark ? 0 : 3 }}>
-                                        <Image source={{ uri: proxyImage(hotel.image_url) }} className="w-full h-48 absolute" resizeMode="cover" style={{ width: '100%', height: 192 }} />
+                                        <View className="w-full h-48 absolute">
+                                            <Image source={{ uri: proxyImage(hotel.image_url) }} className="w-full h-full" resizeMode="cover" />
+                                            {(hotel.preferenceMatch || (hotel.preferenceScore != null && hotel.preferenceScore > 0)) && (
+                                                <View className="absolute top-3 left-3 bg-rose-500 px-3.5 py-1 rounded-full z-10 flex-row items-center shadow-md">
+                                                    <Image source={sparkle} className="w-3 h-3 mr-1" style={{ tintColor: 'white' }} />
+                                                    <Text className="text-white text-xs font-bold">Suggested for you</Text>
+                                                </View>
+                                            )}
+                                        </View>
 
-                                        <TouchableOpacity onPress={() => setExpand(null)} className="absolute right-4 mt-4">
+                                        <TouchableOpacity onPress={() => setExpand(null)} className="absolute right-4 mt-4 z-20">
                                             <Image source={dropw} className="h-6 w-6" />
                                         </TouchableOpacity>
 

@@ -104,22 +104,59 @@ app.get("/search", async (req, res) => {
 app.get("/Hotels", async (req, res) => {
   try {
     const query = req.query.q?.trim();
+    const email = req.query.email;
 
     const filter = query
       ? {
         $or: [
           { hotel_name: { $regex: query, $options: "i" } },
           { nearest_cities: { $regex: query, $options: "i" } },
+          { city: { $regex: query, $options: "i" } },
         ]
       }
-      : {}; // if no query, return all
+      : {};
 
-    const hotels = await db
+    const rawHotels = await db
       .collection("Hotels")
       .find(filter)
       .toArray();
 
-    res.json(hotels);
+    if (!email) {
+      return res.json(rawHotels);
+    }
+
+    const since = new Date();
+    since.setDate(since.getDate() - 60);
+
+    const [logs, matchingAttractions] = await Promise.all([
+      db.collection('Behaviour_Logs').find({ email, timestamp: { $gte: since } }).toArray(),
+      query 
+        ? db.collection('Attraction_places').find({ city: { $regex: query, $options: "i" } }).toArray()
+        : db.collection('Attraction_places').find({}).toArray()
+    ]);
+
+    const { categoryWeights, regionWeights } = buildBehaviourMaps(logs);
+    const locationSupportedCategories = getDynamicSupportedCategoriesForLocation(matchingAttractions);
+
+    const scoredHotels = rawHotels.map(h => {
+      const hotelRegion = classifyRegion({
+        attraction_type: h.features || '',
+        category: h.description || '',
+        city: h.nearest_cities || h.city || '',
+        attraction_name: h.hotel_name || ''
+      });
+      const catBonus = categoryWeights[(h.features || '').toLowerCase()] || 0;
+      const regBonus = getRegionBehaviourBonus(regionWeights, hotelRegion, locationSupportedCategories);
+      const total = catBonus + regBonus;
+      return {
+        ...h,
+        regionType: hotelRegion,
+        preferenceScore: total,
+        preferenceMatch: total > 0,
+      };
+    }).sort((a, b) => b.preferenceScore - a.preferenceScore);
+
+    res.json(scoredHotels);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Something went wrong" });
@@ -372,7 +409,7 @@ app.get("/weather", async (req, res) => {
     const lon = req.query.lon;
 
     const responce = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,wind_speed_10m`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,wind_speed_10m,rain,precipitation`
     );
     const data = await responce.json();
     res.json(data.current);
@@ -381,49 +418,154 @@ app.get("/weather", async (req, res) => {
   }
 })
 
+// ── Shared weather alert helper ──────────────────────────────────────────────
+// Derives a single worst-level alert from open-meteo current weather data.
+// Thresholds (lowered for demo): rain yellow=0.1mm, amber=1mm, red=5mm
+//                                wind yellow=5km/h, amber=15km/h, red=30km/h
+function deriveAlert(current, locationName) {
+  const weathercode = current.weathercode || 0;
+  let rain = current.rain ?? current.precipitation ?? 0;
+  const wind = current.wind_speed_10m || 0;
+
+  // If weathercode says it's raining but rain field is still 0, synthesize a value
+  if (rain === 0 && weathercode >= 51 && weathercode <= 82) {
+    if (weathercode >= 65) rain = 3.0;      // heavy rain → amber
+    else if (weathercode >= 61) rain = 0.8; // moderate rain → yellow
+    else rain = 0.2;                        // drizzle → yellow
+  }
+  if (rain === 0 && weathercode >= 95) rain = 6.0; // thunderstorm → red
+
+  const ORDER = { red: 0, amber: 1, yellow: 2 };
+  let level = null;
+  const parts = [];
+
+  // Rain level
+  let rainLevel = rain >= 5 ? 'red' : rain >= 1 ? 'amber' : rain >= 0.1 ? 'yellow' : null;
+  if (rainLevel) {
+    const msg = rain >= 5 ? 'Extreme rainfall' : rain >= 1 ? 'Heavy rain' : 'Light rain';
+    parts.push(msg);
+    if (!level || ORDER[rainLevel] < ORDER[level]) level = rainLevel;
+  }
+
+  // Wind level
+  let windLevel = wind >= 30 ? 'red' : wind >= 15 ? 'amber' : wind >= 5 ? 'yellow' : null;
+  if (windLevel) {
+    const msg = wind >= 30 ? 'Dangerous winds' : wind >= 15 ? 'Strong winds' : 'Moderate winds';
+    parts.push(msg);
+    if (!level || ORDER[windLevel] < ORDER[level]) level = windLevel;
+  }
+
+  if (!level) return null;
+  return { level, rain: +rain.toFixed(2), wind: +wind.toFixed(1), weathercode, message: `${parts.join(' & ')} in ${locationName}.` };
+}
+
+// ── /weather/alert  (per-place, small radius, used in Attraction expanded card) ─
 app.get("/weather/alert", async (req, res) => {
   try {
     const lat = req.query.lat;
     const lon = req.query.lon;
 
-    const responce = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,wind_speed_10m,rain`
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,wind_speed_10m,rain,precipitation`
     );
-    const data = await responce.json();
+    const data = await response.json();
     const current = data.current;
-
-    const rain = current.rain || 0;
     const wind = current.wind_speed_10m || 0;
+    let rain = current.rain ?? current.precipitation ?? 0;
+    const weathercode = current.weathercode || 0;
 
+    // Small radius: 0.2° (~22km) – finds only the attraction itself and immediate neighbours
     const attractions = await db.collection("Attraction_places").find({
-      latitude: { $gte: parseFloat(lat) - 0.5, $lte: parseFloat(lat) + 0.5 },
-      longitude: { $gte: parseFloat(lon) - 0.5, $lte: parseFloat(lon) + 0.5 },
-    }).toArray();
+      latitude:  { $gte: parseFloat(lat) - 0.2, $lte: parseFloat(lat) + 0.2 },
+      longitude: { $gte: parseFloat(lon) - 0.2, $lte: parseFloat(lon) + 0.2 },
+    }).limit(10).toArray();
 
     const alerts = [];
-
     attractions.forEach((place) => {
-      if (rain >= (place.rain_red_mm || 150)) {
-        alerts.push({ level: "red", place: place.attraction_name, message: `Extreme rainfall warning at ${place.attraction_name}. Avoid visiting.` });
-      } else if (rain >= (place.rain_amber_mm || 100)) {
-        alerts.push({ level: "amber", place: place.attraction_name, message: `Heavy rain warning at ${place.attraction_name}. Visit with caution.` });
-      } else if (rain >= (place.rain_yellow_mm || 75)) {
-        alerts.push({ level: "yellow", place: place.attraction_name, message: `Moderate rain at ${place.attraction_name}. Be prepared.` });
-      }
-
-      if (wind >= (place.wind_danger_kmph || 75)) {
-        alerts.push({ level: "red", place: place.attraction_name, message: `Dangerous winds at ${place.attraction_name}. Do not visit.` });
-      } else if (wind >= (place.wind_warning_kmph || 55)) {
-        alerts.push({ level: "amber", place: place.attraction_name, message: `Strong wind warning at ${place.attraction_name}.` });
-      } else if (wind >= (place.wind_advisory_kmph || 40)) {
-        alerts.push({ level: "yellow", place: place.attraction_name, message: `Wind advisory at ${place.attraction_name}.` });
-      }
+      const a = deriveAlert(current, place.attraction_name);
+      if (a) alerts.push({ ...a, place: place.attraction_name });
     });
 
-    res.json({ rain, wind, alerts });
-
+    res.json({ rain, wind, weathercode, alerts });
   } catch (err) {
     res.status(500).json({ error: "Alert fetch failed" });
+  }
+});
+
+// ── /weather/place-alert  (single location, no DB query, used in expanded card) ─
+app.get("/weather/place-alert", async (req, res) => {
+  try {
+    const { lat, lon, name } = req.query;
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,wind_speed_10m,rain,precipitation`
+    );
+    const data = await response.json();
+    const current = data.current;
+    const alert = deriveAlert(current, name || 'this location');
+    res.json({
+      temperature_2m: current.temperature_2m,
+      weathercode: current.weathercode,
+      wind_speed_10m: current.wind_speed_10m,
+      rain: current.rain ?? current.precipitation ?? 0,
+      alert  // null when no alert
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Place alert fetch failed' });
+  }
+});
+
+// ── /weather/district-alerts  (all 25 Sri Lanka districts, used in Home banner) ─
+const SL_DISTRICTS = [
+  { name: 'Colombo',       lat: 6.9271, lon: 79.8612 },
+  { name: 'Gampaha',       lat: 7.0917, lon: 80.0137 },
+  { name: 'Kalutara',      lat: 6.5854, lon: 79.9607 },
+  { name: 'Kandy',         lat: 7.2906, lon: 80.6337 },
+  { name: 'Matale',        lat: 7.4675, lon: 80.6234 },
+  { name: 'Nuwara Eliya',  lat: 6.9497, lon: 80.7891 },
+  { name: 'Galle',         lat: 6.0535, lon: 80.2210 },
+  { name: 'Matara',        lat: 5.9549, lon: 80.5550 },
+  { name: 'Hambantota',    lat: 6.1241, lon: 81.1185 },
+  { name: 'Jaffna',        lat: 9.6615, lon: 80.0255 },
+  { name: 'Kilinochchi',   lat: 9.3803, lon: 80.4020 },
+  { name: 'Mannar',        lat: 8.9767, lon: 79.9045 },
+  { name: 'Vavuniya',      lat: 8.7514, lon: 80.4971 },
+  { name: 'Mullaitivu',    lat: 9.2671, lon: 80.8120 },
+  { name: 'Batticaloa',    lat: 7.7170, lon: 81.7000 },
+  { name: 'Ampara',        lat: 7.3002, lon: 81.6747 },
+  { name: 'Trincomalee',   lat: 8.5874, lon: 81.2152 },
+  { name: 'Kurunegala',    lat: 7.4867, lon: 80.3647 },
+  { name: 'Puttalam',      lat: 8.0362, lon: 79.8283 },
+  { name: 'Anuradhapura',  lat: 8.3114, lon: 80.4037 },
+  { name: 'Polonnaruwa',   lat: 7.9403, lon: 81.0188 },
+  { name: 'Badulla',       lat: 6.9934, lon: 81.0550 },
+  { name: 'Moneragala',    lat: 6.8728, lon: 81.3500 },
+  { name: 'Ratnapura',     lat: 6.7056, lon: 80.3847 },
+  { name: 'Kegalle',       lat: 7.2513, lon: 80.3464 },
+];
+
+app.get("/weather/district-alerts", async (req, res) => {
+  try {
+    const results = await Promise.allSettled(
+      SL_DISTRICTS.map(async (d) => {
+        const resp = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${d.lat}&longitude=${d.lon}&current=weathercode,wind_speed_10m,rain,precipitation`
+        );
+        const json = await resp.json();
+        const alert = deriveAlert(json.current, `${d.name} District`);
+        if (!alert) return null;
+        return { district: d.name, ...alert };
+      })
+    );
+
+    const ORDER = { red: 0, amber: 1, yellow: 2 };
+    const alerts = results
+      .filter(r => r.status === 'fulfilled' && r.value !== null)
+      .map(r => r.value)
+      .sort((a, b) => ORDER[a.level] - ORDER[b.level]);
+
+    res.json({ alerts });
+  } catch (err) {
+    res.status(500).json({ error: 'District alerts failed' });
   }
 });
 
@@ -513,11 +655,374 @@ app.get("/auth/user", async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        emergencyContact: user.emergencyContact
+        emergencyContact: user.emergencyContact,
+        preferences: user.preferences || null
       }
     });
   } catch (err) {
     res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+
+function extractItemCategoryTypes(placeOrText) {
+  let text = '';
+  if (typeof placeOrText === 'string') {
+    text = placeOrText.toLowerCase();
+  } else if (placeOrText && typeof placeOrText === 'object') {
+    text = `${placeOrText.category || ''} ${placeOrText.attraction_type || ''} ${placeOrText.attraction_name || ''} ${placeOrText.city || ''} ${placeOrText.description || ''}`.toLowerCase();
+  }
+
+  const types = new Set();
+  if (/\b(beach|beaches|surf|coastal|coast|lagoon|ocean|sea|bay|island)\b/i.test(text)) {
+    types.add('coastal');
+  }
+  if (/\b(hill|hills|mountain|mountains|highland|tea|waterfall|waterfalls|trekking|peak|trail|riverston)\b/i.test(text)) {
+    types.add('hill');
+  }
+  if (/\b(temple|temples|ancient|ruin|ruins|heritage|stupa|fort|museum|monument|dagoba)\b/i.test(text)) {
+    types.add('heritage');
+  }
+
+  if (types.size === 0) {
+    types.add('general');
+  }
+  return Array.from(types);
+}
+
+function classifyRegion(place) {
+  const types = extractItemCategoryTypes(place);
+  if (types.includes('coastal')) return 'coastal';
+  if (types.includes('hill')) return 'hill';
+  if (types.includes('heritage')) return 'heritage';
+  return 'inland';
+}
+
+function getDynamicSupportedCategoriesForLocation(locationPlaces) {
+  const supported = new Set();
+  if (Array.isArray(locationPlaces)) {
+    for (const p of locationPlaces) {
+      const types = extractItemCategoryTypes(p);
+      types.forEach(t => supported.add(t));
+    }
+  }
+  if (supported.size === 0) {
+    supported.add('coastal');
+    supported.add('hill');
+    supported.add('heritage');
+    supported.add('general');
+  }
+  return Array.from(supported);
+}
+
+function buildBehaviourMaps(logs) {
+  const categoryWeights = {};
+  const regionWeights = {};
+
+  for (const log of logs) {
+    const text = `${log.itemName || ''} ${log.itemCategory || ''} ${log.regionType || ''}`;
+    const types = extractItemCategoryTypes(text);
+
+    for (const t of types) {
+      regionWeights[t] = Math.min((regionWeights[t] || 0) + 1, 10);
+    }
+    const cat = (log.itemCategory || '').toLowerCase();
+    if (cat) categoryWeights[cat] = Math.min((categoryWeights[cat] || 0) + 1, 10);
+  }
+
+  return { categoryWeights, regionWeights };
+}
+
+function getRegionBehaviourBonus(regionWeights, itemRegionType, locationSupportedCategories) {
+  if (!itemRegionType || !locationSupportedCategories || locationSupportedCategories.length === 0) return 0;
+
+  // Zero out bonus if current location has NO attractions of this category type (e.g. Beaches in Kandy)
+  if (!locationSupportedCategories.includes(itemRegionType)) {
+    return 0;
+  }
+
+  return regionWeights[itemRegionType] || 0;
+}
+
+function deriveContextRegionFromQuery(query) {
+  if (!query) return null;
+  const types = extractItemCategoryTypes(query);
+  if (types.includes('coastal')) return 'coastal';
+  if (types.includes('hill')) return 'hill';
+  if (types.includes('heritage')) return 'heritage';
+  return null;
+}
+
+function deriveContextRegionFromGPS(lat, lon) {
+  if (!lat || !lon) return null;
+  lat = parseFloat(lat);
+  lon = parseFloat(lon);
+  if (isNaN(lat) || isNaN(lon)) return null;
+
+  if (lat >= 6.7 && lat <= 7.5 && lon >= 80.4 && lon <= 81.2) return 'hill';
+  if (lat >= 7.8 && lat <= 9.2 && lon >= 80.0 && lon <= 81.5) return 'heritage';
+  if (lon < 80.15 || lon > 81.45 || lat < 6.15) return 'coastal';
+  return 'inland';
+}
+
+function diversifyResults(scoredItems) {
+  if (scoredItems.length <= 3) return scoredItems;
+
+  // Collect the highest preferenceScore per region type
+  const regionPeak = {};
+  for (const item of scoredItems) {
+    const r = item.regionType || 'inland';
+    if ((item.preferenceScore || 0) > (regionPeak[r] || 0)) regionPeak[r] = item.preferenceScore || 0;
+  }
+
+  const peakScores = Object.values(regionPeak).sort((a, b) => b - a);
+  if (peakScores.length < 2) return scoredItems; // only one region, nothing to diversify
+
+  const gap = peakScores[0] - peakScores[peakScores.length - 1];
+
+  // Clear dominance → keep score order
+  if (gap > 2) return scoredItems;
+
+  // Balanced interest → interleave by region
+  const groups = {};
+  for (const item of scoredItems) {
+    const r = item.regionType || 'inland';
+    if (!groups[r]) groups[r] = [];
+    groups[r].push(item); // already sorted by score within group
+  }
+
+  // Order groups by their peak score descending
+  const orderedKeys = Object.keys(groups).sort((a, b) => (regionPeak[b] || 0) - (regionPeak[a] || 0));
+
+  const result = [];
+  let i = 0;
+  while (result.length < scoredItems.length) {
+    let added = false;
+    const key = orderedKeys[i % orderedKeys.length];
+    if (groups[key] && groups[key].length > 0) {
+      result.push(groups[key].shift());
+      added = true;
+    }
+    i++;
+    // Safety break: if all groups exhausted
+    if (orderedKeys.every(k => !groups[k] || groups[k].length === 0)) break;
+  }
+  return result;
+}
+
+app.get("/Search/All", async (req, res) => {
+  try {
+    const query = req.query.q?.trim();
+    const email = req.query.email;
+    if (!query) return res.json({ attractions: [], hotels: [], restaurants: [] });
+
+    // Load preferences + behaviour logs in parallel
+    let categoryWeights = {};
+    let regionWeights = {};
+
+    if (email) {
+      const since = new Date();
+      since.setDate(since.getDate() - 60);
+
+      // Automatically log search query to Behaviour_Logs so search history is persisted
+      if (query.length >= 3) {
+        const queryTypes = extractItemCategoryTypes(query);
+        db.collection('Behaviour_Logs').insertOne({
+          email,
+          itemId: `search_${query.toLowerCase()}`,
+          itemName: query,
+          itemType: 'search',
+          itemCategory: query.toLowerCase(),
+          regionType: queryTypes[0] || 'inland',
+          timestamp: new Date()
+        }).catch(() => {});
+      }
+
+      const logs = await db.collection('Behaviour_Logs').find({ email, timestamp: { $gte: since } }).toArray();
+      ({ categoryWeights, regionWeights } = buildBehaviourMaps(logs));
+    }
+
+    const regexFilter = { $regex: query, $options: 'i' };
+
+    // Parallel DB fetch
+    const [rawAttractions, rawHotels, rawRestaurants] = await Promise.all([
+      db.collection('Attraction_places').find({
+        $or: [
+          { attraction_name: regexFilter },
+          { city: regexFilter },
+          { category: regexFilter },
+          { attraction_type: regexFilter },
+        ]
+      }).limit(30).toArray(),
+      db.collection('Hotels').find({
+        $or: [
+          { hotel_name: regexFilter },
+          { nearest_cities: regexFilter },
+        ]
+      }).limit(15).toArray(),
+      db.collection('Resturants').find({
+        $or: [
+          { restaurant_name: regexFilter },
+          { city: regexFilter },
+          { cuisine_type: regexFilter },
+        ]
+      }).limit(15).toArray(),
+    ]);
+
+    // Discover supported categories dynamically from returned attractions
+    const locationSupportedCategories = getDynamicSupportedCategoriesForLocation(rawAttractions);
+
+    // Score attractions with location-constrained behavioral matching
+    let scoredAttractions = rawAttractions.map(p => {
+      const itemRegion = classifyRegion(p);
+      const catBonus = categoryWeights[(p.category || '').toLowerCase()] || 0;
+      const regBonus = getRegionBehaviourBonus(regionWeights, itemRegion, locationSupportedCategories);
+      const total = catBonus + regBonus;
+      return {
+        ...p,
+        regionType: itemRegion,
+        preferenceScore: total,
+        preferenceMatch: total > 0,
+      };
+    });
+
+    scoredAttractions.sort((a, b) =>
+      b.preferenceScore - a.preferenceScore ||
+      (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0)
+    );
+    scoredAttractions = diversifyResults(scoredAttractions);
+
+    // Score hotels based on nearby places & location-constrained behavioral matching
+    const scoredHotels = rawHotels.map(h => {
+      const hotelRegion = classifyRegion({
+        attraction_type: h.features || '',
+        category: h.description || '',
+        city: h.nearest_cities || h.city || '',
+        attraction_name: h.hotel_name || ''
+      });
+      const catBonus = categoryWeights[(h.features || '').toLowerCase()] || 0;
+      const regBonus = getRegionBehaviourBonus(regionWeights, hotelRegion, locationSupportedCategories);
+      const total = catBonus + regBonus;
+      return {
+        ...h,
+        regionType: hotelRegion,
+        preferenceScore: total,
+        preferenceMatch: total > 0,
+      };
+    }).sort((a, b) => b.preferenceScore - a.preferenceScore);
+
+    // Score restaurants
+    const scoredRestaurants = rawRestaurants.map(r => {
+      const catBonus = categoryWeights[(r.cuisine_type || '').toLowerCase()] || 0;
+      return { ...r, preferenceScore: catBonus, preferenceMatch: catBonus > 0 };
+    }).sort((a, b) => b.preferenceScore - a.preferenceScore);
+
+    res.json({
+      attractions: scoredAttractions,
+      hotels: scoredHotels,
+      restaurants: scoredRestaurants,
+      _debug: { locationSupportedCategories, categoryWeights, regionWeights },
+    });
+  } catch (err) {
+    console.error('Search/All error:', err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+app.post("/log/behaviour", async (req, res) => {
+  try {
+    const {
+      email, itemId, itemName, itemType,
+      itemCategory, itemEnvironment,
+      itemAttractionType, itemCity, itemProvince
+    } = req.body;
+    if (!email || !itemId) return res.status(400).json({ error: 'Missing required fields' });
+
+    // Derive the region of the tapped attraction
+    const regionType = classifyRegion({
+      attraction_type: itemAttractionType || '',
+      category: itemCategory || '',
+      city: itemCity || itemEnvironment || '',
+      province: itemProvince || '',
+    });
+
+    await db.collection('Behaviour_Logs').insertOne({
+      email,
+      itemId: String(itemId),
+      itemName: itemName || '',
+      itemType: itemType || 'attraction',
+      itemCategory: itemCategory || '',
+      itemEnvironment: itemEnvironment || '',
+      // Location-context fields
+      regionType,
+      sourceRegion: itemCity || itemProvince || '',
+      timestamp: new Date(),
+    });
+    res.json({ success: true, regionType });
+  } catch (err) {
+    console.error('Behaviour log error:', err);
+    res.status(500).json({ error: 'Failed to log behaviour' });
+  }
+});
+
+app.get("/recommendations/personal", async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) return res.json([]);
+
+    const targetCity = req.query.city;
+    const since = new Date();
+    since.setDate(since.getDate() - 60);
+
+    const [logs, allAttractions] = await Promise.all([
+      db.collection('Behaviour_Logs').find({ email, timestamp: { $gte: since } }).toArray(),
+      db.collection('Attraction_places').find({}).toArray(),
+    ]);
+
+    const { categoryWeights, regionWeights } = buildBehaviourMaps(logs);
+
+    let locationAttractions = allAttractions;
+    if (targetCity) {
+      locationAttractions = allAttractions.filter(p => 
+        (p.city || '').toLowerCase().includes(targetCity.toLowerCase())
+      );
+    }
+
+    // Discover supported categories dynamically from the target location's attractions
+    const locationSupportedCategories = getDynamicSupportedCategoriesForLocation(
+      locationAttractions.length > 0 ? locationAttractions : allAttractions
+    );
+
+    // Score every attraction with location-constrained behavioral matching
+    let scored = allAttractions.map(p => {
+      const itemRegion = classifyRegion(p);
+      const catBonus = categoryWeights[(p.category || '').toLowerCase()] || 0;
+      const regBonus = getRegionBehaviourBonus(regionWeights, itemRegion, locationSupportedCategories);
+      const total = catBonus + regBonus;
+      return {
+        ...p,
+        regionType: itemRegion,
+        preferenceScore: total,
+        preferenceMatch: total > 0,
+      };
+    });
+
+    if (targetCity && locationAttractions.length > 0) {
+      scored = scored.filter(item => 
+        (item.city || '').toLowerCase().includes(targetCity.toLowerCase())
+      );
+    }
+
+    scored.sort((a, b) =>
+      b.preferenceScore - a.preferenceScore ||
+      (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0)
+    );
+    scored = diversifyResults(scored);
+
+    res.json(scored.slice(0, 10));
+  } catch (err) {
+    console.error("Personal recommendations error:", err);
+    res.status(500).json({ error: "Failed to fetch recommendations" });
   }
 });
 
@@ -586,8 +1091,6 @@ app.get("/route/recommendations", async (req, res) => {
     cityBest.sort((a, b) => a.distanceAlongRouteKm - b.distanceAlongRouteKm);
 
     const extras = candidates.filter(p => !selectedIds.has(String(p._id)));
-
-    // Merge: city picks first (up to limit)
     const merged = [...cityBest, ...extras].slice(0, maxResults);
 
     merged.sort((a, b) => a.distanceAlongRouteKm - b.distanceAlongRouteKm);
@@ -606,9 +1109,6 @@ app.get("/route/recommendations", async (req, res) => {
   }
 })
 
-
-
-
 // --- Hotel Owner and Admin Portal Endpoints ---
 
 app.post("/owner/register", async (req, res) => {
@@ -619,7 +1119,7 @@ app.post("/owner/register", async (req, res) => {
     }
     const existing = await db.collection("Hotel_Owners").findOne({ email });
     if (existing) return res.status(409).json({ error: "Email already registered" });
-    
+
     await db.collection("Hotel_Owners").insertOne({
       name, email, password, phone,
       isApproved: false, createdAt: new Date()
@@ -636,7 +1136,7 @@ app.post("/owner/login", async (req, res) => {
     const user = await db.collection("Hotel_Owners").findOne({ email, password });
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
     if (!user.isApproved) return res.status(403).json({ error: "Account pending admin approval" });
-    
+
     res.json({ success: true, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
@@ -647,7 +1147,7 @@ app.post("/owner/hotels", async (req, res) => {
   try {
     const { ownerId, hotel_name, description, star_rating, price_per_night_usd, review_count, features, latitude, longitude, image_url, nearest_cities } = req.body;
     if (!ownerId || !hotel_name) return res.status(400).json({ error: "Missing fields" });
-    
+
     await db.collection("Hotels").insertOne({
       ownerId: new ObjectId(ownerId),
       hotel_name, description,
@@ -734,7 +1234,7 @@ app.post("/support/contact", async (req, res) => {
     if (!name || !email || !message || !category) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    
+
     await db.collection("Support_Tickets").insertOne({
       name,
       email,
@@ -744,7 +1244,7 @@ app.post("/support/contact", async (req, res) => {
       status: "Open",
       createdAt: new Date()
     });
-    
+
     res.json({ success: true, message: "Support ticket created successfully" });
   } catch (err) {
     console.error("Support contact error:", err);
